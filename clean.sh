@@ -5,3 +5,6 @@ rm *.o
 rm -rf *.bundle*
 rm *.log
 rm Makefile
+
+# uninstall gem, sometimes can't install if there's errors
+gem uninstall rbscene

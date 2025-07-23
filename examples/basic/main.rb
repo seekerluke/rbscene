@@ -1,18 +1,38 @@
 require "rbscene"
 
-class Player
-    def initialize
-        @x = 100
-        @y = 100
+class Player < RBEngine::GameObject
+    def initialize(texture, music)
+        @texture = texture
+        @music = music
+        super() # annoying
     end
 
     def update
-        @x += 1
+        @music.update
     end
 
     def draw
-        RBScene::Bindings.draw_rectangle(@x, @y, 50, 50)
+        @texture.draw 0, 0
     end
 end
 
-RBScene::Engine.run([Player.new])
+texture = RBScene::Texture.load("scene.png")
+
+music = RBScene::Music.load("music.mp3")
+music.play
+
+sound = RBScene::Sound.load("jump.wav")
+sound.play
+
+player = Player.new texture, music
+
+player.on :keypress do |key|
+    sound.play if key == :space
+    puts "enter" if key == :enter
+end
+
+player.on :keydown do |key|
+    puts "DOWN" if key == :down
+end
+
+RBScene::Engine.run([player])

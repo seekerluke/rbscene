@@ -1,7 +1,5 @@
 module RBScene
     class GameObject
-        @default_sprite = nil
-
         def initialize
             # array of events per key
             @events = Hash.new { |h, k| h[k] = [] }
@@ -13,10 +11,19 @@ module RBScene
             @angle = self.class.default_angle
 
             RBScene.scene.add(self)
+            setup
+        end
+
+        # method stub to be overridden
+        def setup
         end
 
         # method stub to be overridden
         def update
+        end
+
+        def input
+            RBScene::Input.instance
         end
 
         def on(type_sym, &block)

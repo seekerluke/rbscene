@@ -4,6 +4,7 @@
 // these are set on init
 static VALUE rbscene_module = Qnil;
 static VALUE game_object_class = Qnil;
+static VALUE input_singleton = Qnil;
 
 typedef struct
 {
@@ -66,6 +67,62 @@ static const rb_data_type_t sound_type =
 static Camera2D cam = { .zoom = 2 };
 static RBMusic *current_music = NULL;
 
+static int symbol_to_keycode(VALUE sym)
+{
+    Check_Type(sym, T_SYMBOL);
+    const char *name = rb_id2name(SYM2ID(sym));
+
+    if (strcmp(name, "space") == 0) return KEY_SPACE;
+    if (strcmp(name, "enter") == 0) return KEY_ENTER;
+    if (strcmp(name, "escape") == 0) return KEY_ESCAPE;
+    if (strcmp(name, "left") == 0) return KEY_LEFT;
+    if (strcmp(name, "right") == 0) return KEY_RIGHT;
+    if (strcmp(name, "up") == 0) return KEY_UP;
+    if (strcmp(name, "down") == 0) return KEY_DOWN;
+
+    // a-z keys
+    if (strlen(name) == 1 && name[0] >= 'a' && name[0] <= 'z') {
+        return KEY_A + (name[0] - 'a');
+    }
+
+    rb_raise(rb_eArgError, "Unrecognized key symbol: :%s", name);
+    return -1; // unreachable, but needed for compilation
+}
+
+static int inputs_inner_foreach_callback(VALUE key, VALUE value, VALUE arg)
+{
+    // inner entry = {right: [true, false, false], gp_right: [false, false, false]}
+    Check_Type(key, T_SYMBOL);
+    assert(value == Qtrue || value == Qfalse);
+
+    // create a new array to store the key state results in
+    VALUE keystate_array = rb_ary_new();
+    int code = symbol_to_keycode(key);
+
+    // [key_down, key_pressed, key_released]
+    VALUE result = IsKeyDown(code) ? Qtrue : Qfalse;
+    rb_ary_push(keystate_array, result);
+    result = IsKeyPressed(code) ? Qtrue : Qfalse;
+    rb_ary_push(keystate_array, result);
+    result = IsKeyReleased(code) ? Qtrue : Qfalse;
+    rb_ary_push(keystate_array, result);
+
+    rb_hash_aset(arg, key, keystate_array);
+    return ST_CONTINUE;
+}
+
+static int inputs_foreach_callback(VALUE key, VALUE value, VALUE arg)
+{
+    // entry looks like this: "right": {right: true, gp_right: false}
+    // key is a string, key inside the hash is a symbol, value is a bool
+    Check_Type(key, T_STRING);
+    Check_Type(value, T_HASH);
+
+    rb_hash_foreach(value, inputs_inner_foreach_callback, value);
+
+    return ST_CONTINUE;
+}
+
 static VALUE engine_run(VALUE self)
 {
     while (!WindowShouldClose())
@@ -75,9 +132,15 @@ static VALUE engine_run(VALUE self)
         VALUE objects = rb_iv_get(scene, "@objects");
         long len = RARRAY_LEN(objects);
 
+        // handle inputs
+        VALUE inputs = rb_iv_get(input_singleton, "@inputs");
+        Check_Type(inputs, T_HASH);
+        rb_hash_foreach(inputs, inputs_foreach_callback, Qnil);
+
+        if (current_music) UpdateMusicStream(current_music->music);
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        if (current_music) UpdateMusicStream(current_music->music);
 
         // update loop
         for (int i = 0; i < len; i++)
@@ -181,7 +244,7 @@ static VALUE music_load(VALUE self, VALUE filename)
 {
     Check_Type(filename, T_STRING);
     TypedData_Make_Struct(self, RBMusic, &music_type, current_music);
-    current_music->music = LoadMusicStream(StringValueCStr(filename));
+    current_music->music = LoadMusicStream(StringValueCStr(filename)); // TODO: cache this
     return Qnil;
 }
 
@@ -233,6 +296,8 @@ void Init_rbscene(void)
 
     // reference existing Ruby classes
     game_object_class = rb_const_get(rbscene_module, rb_intern("GameObject"));
+    VALUE input_class = rb_const_get(rbscene_module, rb_intern("Input"));
+    input_singleton = rb_funcall(input_class, rb_intern("instance"), 0);
 
     // init raylib
     InitWindow(320, 288, "Game");

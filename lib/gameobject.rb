@@ -15,6 +15,10 @@ module RBScene
             RBScene.scene.add(self)
         end
 
+        # method stub to be overridden
+        def update
+        end
+
         def on(type_sym, &block)
             @events[type_sym] << block
         end

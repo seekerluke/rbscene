@@ -1,7 +1,9 @@
 #include "ruby.h"
 #include "raylib.h"
 
+// these are set on init
 static VALUE rbscene_module = Qnil;
+static VALUE game_object_class = Qnil;
 
 typedef struct
 {
@@ -70,48 +72,64 @@ static VALUE engine_run(VALUE self)
         // fetch the current scene's objects
         VALUE scene = rb_iv_get(rbscene_module, "@current_scene");
         VALUE objects = rb_iv_get(scene, "@objects");
+        long len = RARRAY_LEN(objects);
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        // handle inputs later, will likely have an input manager of some sort accessible with GameObject#input
-
-        for (int i = 0; i < RARRAY_LEN(objects); i++)
+        // update loop
+        for (int i = 0; i < len; i++)
         {
-            /*
-            TODO: Needs rough validation.
-            Everything in the array should be a RBScene::GameObject or a subclass of it.
-            Define stubs for update and draw in GameObject so you don't need rb_respond_to.
-            */
             VALUE obj_val = rb_ary_entry(objects, i);
-
-            if (rb_respond_to(obj_val, rb_intern("update")))
+            if (rb_obj_is_kind_of(obj_val, game_object_class))
+            {
                 rb_funcall(obj_val, rb_intern("update"), 0);
+            }
+            else
+            {
+                VALUE obj_class = rb_obj_class(obj_val);
+                VALUE class_name = rb_class_name(obj_class);
+                rb_raise(rb_eTypeError, "Attempting to update a %s, which is not a GameObject", StringValueCStr(class_name));
+            }
+        }
 
-            // slow, need to draw all objects at once
-            BeginMode2D(cam);
+        // draw loop
+        for (int i = 0; i < len; i++)
+        {
+            VALUE obj_val = rb_ary_entry(objects, i);
+            if (rb_obj_is_kind_of(obj_val, game_object_class))
+            {
+                // slow, need to draw all objects at once
+                BeginMode2D(cam);
 
-            VALUE sprite_val = rb_iv_get(obj_val, "@sprite");
-            VALUE x_val = rb_iv_get(obj_val, "@x");
-            VALUE y_val = rb_iv_get(obj_val, "@y");
-            VALUE width_val = rb_iv_get(obj_val, "@width");
-            VALUE height_val = rb_iv_get(obj_val, "@height");
-            VALUE angle_val = rb_iv_get(obj_val, "@angle");
-            RBTexture *tex;
-            TypedData_Get_Struct(sprite_val, RBTexture, &texture_type, tex);
+                VALUE sprite_val = rb_iv_get(obj_val, "@sprite");
+                VALUE x_val = rb_iv_get(obj_val, "@x");
+                VALUE y_val = rb_iv_get(obj_val, "@y");
+                VALUE width_val = rb_iv_get(obj_val, "@width");
+                VALUE height_val = rb_iv_get(obj_val, "@height");
+                VALUE angle_val = rb_iv_get(obj_val, "@angle");
+                RBTexture *tex;
+                TypedData_Get_Struct(sprite_val, RBTexture, &texture_type, tex);
 
-            float x = NUM2DBL(x_val);
-            float y = NUM2DBL(y_val);
-            float width = NUM2DBL(width_val);
-            float height = NUM2DBL(height_val);
-            float angle = NUM2DBL(angle_val);
+                float x = NUM2DBL(x_val);
+                float y = NUM2DBL(y_val);
+                float width = NUM2DBL(width_val);
+                float height = NUM2DBL(height_val);
+                float angle = NUM2DBL(angle_val);
 
-            Rectangle src = {.x = 0, .y = 0, .width = width, .height = height};
-            Rectangle dst = {.x = x, .y = y, .width = width, .height = height};
-            Vector2 origin = {.x = 0, .y = 0};
-            DrawTexturePro(tex->texture, src, dst, origin, angle, WHITE);
+                Rectangle src = {.x = 0, .y = 0, .width = width, .height = height};
+                Rectangle dst = {.x = x, .y = y, .width = width, .height = height};
+                Vector2 origin = {.x = 0, .y = 0};
+                DrawTexturePro(tex->texture, src, dst, origin, angle, WHITE);
 
-            EndMode2D();
+                EndMode2D();
+            }
+            else
+            {
+                VALUE obj_class = rb_obj_class(obj_val);
+                VALUE class_name = rb_class_name(obj_class);
+                rb_raise(rb_eTypeError, "Attempting to draw a %s, which is not a GameObject", StringValueCStr(class_name));
+            }
         }
 
         EndDrawing();
@@ -225,6 +243,9 @@ void Init_rbscene(void)
     VALUE sound_class = rb_define_class_under(rbscene_module, "Sound", rb_cObject);
     rb_define_singleton_method(sound_class, "load", sound_load, 1);
     rb_define_method(sound_class, "play", sound_play, 0);
+
+    // reference existing Ruby classes
+    game_object_class = rb_const_get(rbscene_module, rb_intern("GameObject"));
 
     // init raylib
     InitWindow(320, 288, "Game");

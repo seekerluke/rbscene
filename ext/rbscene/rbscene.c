@@ -126,12 +126,21 @@ static VALUE engine_run(VALUE self)
 static VALUE texture_load(VALUE self, VALUE filename)
 {
     Check_Type(filename, T_STRING);
+    
+    VALUE cache_val = rb_iv_get(self, "@cache");
+    VALUE texture_val = rb_hash_lookup(cache_val, filename);
 
-    RBTexture *tex;
-    VALUE obj_val = TypedData_Make_Struct(self, RBTexture, &texture_type, tex);
+    if (texture_val == Qnil)
+    {
+        // cache doesn't have an entry at this key, make a new one
+        RBTexture *tex;
+        texture_val = TypedData_Make_Struct(self, RBTexture, &texture_type, tex);
+        tex->texture = LoadTexture(StringValueCStr(filename));
+        rb_hash_aset(cache_val, filename, texture_val);
+    }
 
-    tex->texture = LoadTexture(StringValueCStr(filename));
-    return obj_val;
+    // if cache already has this entry, just return it
+    return texture_val;
 }
 
 static VALUE texture_width(VALUE self)
@@ -203,6 +212,7 @@ void Init_rbscene(void)
     rb_define_singleton_method(engine_class, "run", engine_run, 0);
 
     VALUE texture_class = rb_define_class_under(rbscene_module, "Texture", rb_cObject);
+    rb_iv_set(texture_class, "@cache", rb_hash_new());
     rb_define_singleton_method(texture_class, "load", texture_load, 1);
     rb_define_method(texture_class, "width", texture_width, 0);
     rb_define_method(texture_class, "height", texture_height, 0);

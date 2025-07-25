@@ -64,6 +64,7 @@ static const rb_data_type_t sound_type =
 
 // global engine variables
 static Camera2D cam = { .zoom = 2 };
+static RBMusic *current_music = NULL;
 
 static VALUE engine_run(VALUE self)
 {
@@ -76,6 +77,7 @@ static VALUE engine_run(VALUE self)
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
+        if (current_music) UpdateMusicStream(current_music->music);
 
         // update loop
         for (int i = 0; i < len; i++)
@@ -178,28 +180,14 @@ static VALUE texture_height(VALUE self)
 static VALUE music_load(VALUE self, VALUE filename)
 {
     Check_Type(filename, T_STRING);
-
-    RBMusic *music;
-    VALUE obj_val = TypedData_Make_Struct(self, RBMusic, &music_type, music);
-
-    music->music = LoadMusicStream(StringValueCStr(filename));
-    return obj_val;
+    TypedData_Make_Struct(self, RBMusic, &music_type, current_music);
+    current_music->music = LoadMusicStream(StringValueCStr(filename));
+    return Qnil;
 }
 
 static VALUE music_play(VALUE self)
 {
-    RBMusic *music;
-    TypedData_Get_Struct(self, RBMusic, &music_type, music);
-    PlayMusicStream(music->music);
-    return Qnil;
-}
-
-// absolutely should not exist
-static VALUE music_update(VALUE self)
-{
-    RBMusic *music;
-    TypedData_Get_Struct(self, RBMusic, &music_type, music);
-    UpdateMusicStream(music->music);
+    if (current_music) PlayMusicStream(current_music->music);
     return Qnil;
 }
 
@@ -237,8 +225,7 @@ void Init_rbscene(void)
 
     VALUE music_class = rb_define_class_under(rbscene_module, "Music", rb_cObject);
     rb_define_singleton_method(music_class, "load", music_load, 1);
-    rb_define_method(music_class, "play", music_play, 0);
-    rb_define_method(music_class, "update", music_update, 0);
+    rb_define_singleton_method(music_class, "play", music_play, 0);
 
     VALUE sound_class = rb_define_class_under(rbscene_module, "Sound", rb_cObject);
     rb_define_singleton_method(sound_class, "load", sound_load, 1);

@@ -2,8 +2,8 @@ require "rbscene"
 require_relative "background"
 require_relative "player"
 
-# music = RBScene::Music.load("music.mp3")
-# music.play
+RBScene::Music.load("music.mp3")
+RBScene::Music.play
 
 sound = RBScene::Sound.load("jump.wav")
 sound.play

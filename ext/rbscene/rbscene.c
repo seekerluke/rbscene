@@ -1,6 +1,8 @@
 #include "ruby.h"
 #include "raylib.h"
 
+static VALUE rbscene_module = Qnil;
+
 typedef struct
 {
     Texture2D texture;
@@ -77,12 +79,14 @@ static VALUE keycode_to_symbol(int keycode)
 // global engine variables
 static Camera2D cam = { .zoom = 2 };
 
-static VALUE engine_run(VALUE self, VALUE objects)
+static VALUE engine_run(VALUE self)
 {
-    Check_Type(objects, T_ARRAY);
-
     while (!WindowShouldClose())
     {
+        // fetch the current scene's objects
+        VALUE scene = rb_iv_get(rbscene_module, "@current_scene");
+        VALUE objects = rb_iv_get(scene, "@objects");
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
@@ -126,11 +130,13 @@ static VALUE engine_run(VALUE self, VALUE objects)
             if (rb_respond_to(obj, rb_intern("update")))
                 rb_funcall(obj, rb_intern("update"), 0);
 
-            // slow, need to update all objects at once
+            // slow, need to draw all objects at once
             BeginMode2D(cam);
 
-            if (rb_respond_to(obj, rb_intern("draw")))
-                rb_funcall(obj, rb_intern("draw"), 0);
+            VALUE sprite = rb_iv_get(obj, "@sprite");
+            RBTexture *tex;
+            TypedData_Get_Struct(sprite, RBTexture, &texture_type, tex);
+            DrawTexture(tex->texture, 0, 0, WHITE);
 
             EndMode2D();
         }
@@ -138,6 +144,7 @@ static VALUE engine_run(VALUE self, VALUE objects)
         EndDrawing();
     }
 
+    // should not need to clean up loaded textures and audio, when Ruby closes they should be GC'd
     CloseAudioDevice();
     CloseWindow();
     return Qnil;
@@ -216,9 +223,9 @@ static VALUE sound_play(VALUE self)
 void Init_rbscene(void)
 {
     // init bindings
-    VALUE rbscene_module = rb_define_module("RBScene");
+    rbscene_module = rb_define_module("RBScene");
     VALUE engine_class = rb_define_class_under(rbscene_module, "Engine", rb_cObject);
-    rb_define_singleton_method(engine_class, "run", engine_run, 1);
+    rb_define_singleton_method(engine_class, "run", engine_run, 0);
 
     VALUE texture_class = rb_define_class_under(rbscene_module, "Texture", rb_cObject);
     rb_define_singleton_method(texture_class, "load", texture_load, 1);

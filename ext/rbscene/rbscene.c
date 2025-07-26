@@ -4,6 +4,7 @@
 // these are set on init
 static VALUE rbscene_module = Qnil;
 static VALUE game_object_class = Qnil;
+static VALUE render_props_class = Qnil;
 static VALUE scene_class = Qnil;
 static VALUE texture_class = Qnil;
 static VALUE input_singleton = Qnil;
@@ -22,6 +23,16 @@ typedef struct
 {
     Sound sound;
 } RBSound;
+
+// used to keep track of game object properties used for rendering
+// faster than just calling rb_iv_get on each of them individually
+typedef struct
+{
+    float x, y;
+    float width, height;
+    float angle;
+    Rectangle frame_rect;
+} RBRenderProps;
 
 static void texture_free(void *ptr)
 {
@@ -62,6 +73,13 @@ static const rb_data_type_t sound_type =
 {
     "RBScene::Sound",
     { 0, sound_free, 0 },
+    0, 0, RUBY_TYPED_FREE_IMMEDIATELY
+};
+
+static const rb_data_type_t render_props_type =
+{
+    "RBScene::RenderObject",
+    { 0, RUBY_DEFAULT_FREE, 0 },
     0, 0, RUBY_TYPED_FREE_IMMEDIATELY
 };
 
@@ -171,27 +189,25 @@ static VALUE engine_run(VALUE self)
         {
             VALUE obj_val = rb_ary_entry(objects, i);
             if (rb_obj_is_kind_of(obj_val, game_object_class))
-            {
-                // do not rewrite yet, I want to do performance tests comparing this code to the alternatives
-                VALUE sprite_val = rb_iv_get(obj_val, "@sprite");
-                VALUE x_val = rb_iv_get(obj_val, "@x");
-                VALUE y_val = rb_iv_get(obj_val, "@y");
-                VALUE width_val = rb_iv_get(obj_val, "@width");
-                VALUE height_val = rb_iv_get(obj_val, "@height");
-                VALUE angle_val = rb_iv_get(obj_val, "@angle");
+            {                
+                VALUE texture_val = rb_iv_get(obj_val, "@texture");
                 RBTexture *tex;
-                TypedData_Get_Struct(sprite_val, RBTexture, &texture_type, tex);
+                TypedData_Get_Struct(texture_val, RBTexture, &texture_type, tex);
 
-                float x = NUM2DBL(x_val);
-                float y = NUM2DBL(y_val);
-                float width = NUM2DBL(width_val);
-                float height = NUM2DBL(height_val);
-                float angle = NUM2DBL(angle_val);
+                VALUE render_props_val = rb_iv_get(obj_val, "@render_props");
+                assert(rb_obj_is_kind_of(render_props_val, render_props_class));
 
-                Rectangle src = {.x = 0, .y = 0, .width = width, .height = height};
-                Rectangle dst = {.x = x, .y = y, .width = width, .height = height};
+                RBRenderProps *props;
+                TypedData_Get_Struct(render_props_val, RBRenderProps, &render_props_type, props);
+
+                Rectangle dst = {
+                    .x = props->x,
+                    .y = props->y,
+                    .width = props->width,
+                    .height = props->height
+                };
                 Vector2 origin = {.x = 0, .y = 0};
-                DrawTexturePro(tex->texture, src, dst, origin, angle, WHITE);
+                DrawTexturePro(tex->texture, props->frame_rect, dst, origin, props->angle, WHITE);
             }
             else
             {
@@ -281,6 +297,33 @@ static VALUE sound_play(VALUE self)
     return Qnil;
 }
 
+// creates default render props with internally on game object, called on init
+// width and height defaults to the passed texture's width and height, everything else is zero
+static VALUE game_object_make_render_props(VALUE self, VALUE texture)
+{
+    assert(rb_obj_is_kind_of(texture, texture_class));
+
+    RBRenderProps *robj;
+    VALUE robj_val = TypedData_Make_Struct(render_props_class, RBRenderProps, &render_props_type, robj);
+
+    RBTexture *tex;
+    TypedData_Get_Struct(texture, RBTexture, &texture_type, tex);
+
+    robj->x = 0;
+    robj->y = 0;
+    robj->width = tex->texture.width;
+    robj->height = tex->texture.height;
+    robj->angle = 0;
+    robj->frame_rect = (Rectangle){
+        .x = 0,
+        .y = 0,
+        .width = tex->texture.width,
+        .height = tex->texture.height,
+    };
+
+    return robj_val;
+}
+
 void Init_rbscene(void)
 {
     // init bindings
@@ -302,8 +345,14 @@ void Init_rbscene(void)
     rb_define_singleton_method(sound_class, "load", sound_load, 1);
     rb_define_method(sound_class, "play", sound_play, 0);
 
+    // empty class definition for make_render_props
+    render_props_class = rb_define_class_under(rbscene_module, "RenderProps", rb_cObject);
+
     // reference existing Ruby classes
     game_object_class = rb_const_get(rbscene_module, rb_intern("GameObject"));
+    rb_define_method(game_object_class, "make_render_props", game_object_make_render_props, 1);
+    rb_funcall(game_object_class, rb_intern("private"), 1, ID2SYM(rb_intern("make_render_props"))); // declare make_render_props private
+
     scene_class = rb_const_get(rbscene_module, rb_intern("Scene"));
     VALUE input_class = rb_const_get(rbscene_module, rb_intern("Input"));
     input_singleton = rb_funcall(input_class, rb_intern("instance"), 0);

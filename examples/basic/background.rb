@@ -1,3 +1,3 @@
 class Background < RBScene::GameObject
-    sprite "scene.png"
+    texture "scene.png"
 end

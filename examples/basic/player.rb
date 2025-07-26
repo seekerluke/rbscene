@@ -1,5 +1,5 @@
 class Player < RBScene::GameObject
-    sprite "player.png"
+    texture "player.png"
     position x: 50, y: 20
     angle 90
 

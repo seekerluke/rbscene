@@ -4,10 +4,14 @@ module RBScene
             # array of events per key
             @events = Hash.new { |h, k| h[k] = [] }
 
-            @sprite = self.class.default_sprite
+            # private C function used to store render properties for faster rendering
+            @render_props = make_render_props(self.class.default_texture) if self.class.default_texture
+
+            # change these to set render_props with the internal accessor functions
+            @texture = self.class.default_texture
             @x, @y = self.class.default_position
-            @width = @sprite.width || 0
-            @height = @sprite.height || 0
+            @width = @texture.width || 0
+            @height = @texture.height || 0
             @angle = self.class.default_angle
 
             RBScene.scene.add(self)
@@ -35,8 +39,8 @@ module RBScene
         end
 
         class << self
-            def sprite(path)
-                @default_sprite = RBScene::Texture.load(path)
+            def texture(path)
+                @default_texture = RBScene::Texture.load(path)
             end
 
             def position(x: 0, y: 0)
@@ -47,8 +51,8 @@ module RBScene
                 @default_angle = angle
             end
 
-            def default_sprite
-                @default_sprite # can be nil
+            def default_texture
+                @default_texture # can be nil
             end
 
             def default_position

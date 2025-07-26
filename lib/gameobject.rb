@@ -95,6 +95,10 @@ module RBScene
                 @default_angle = angle
             end
 
+            def frame_rect(rect)
+                @default_frame_rect = rect
+            end
+
             def default_texture
                 @default_texture # can be nil
             end

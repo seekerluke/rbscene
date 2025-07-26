@@ -1,10 +1,11 @@
 #include "ruby.h"
 #include "raylib.h"
 
-// these are set on init
+// global refs to modules and classes, usually for type checks
 static VALUE rbscene_module = Qnil;
 static VALUE game_object_class = Qnil;
 static VALUE render_props_class = Qnil;
+static VALUE rect_class = Qnil;
 static VALUE scene_class = Qnil;
 static VALUE texture_class = Qnil;
 static VALUE input_singleton = Qnil;
@@ -79,6 +80,13 @@ static const rb_data_type_t sound_type =
 static const rb_data_type_t render_props_type =
 {
     "RBScene::RenderObject",
+    { 0, RUBY_DEFAULT_FREE, 0 },
+    0, 0, RUBY_TYPED_FREE_IMMEDIATELY
+};
+
+static const rb_data_type_t rect_type =
+{
+    "RBScene::Rect",
     { 0, RUBY_DEFAULT_FREE, 0 },
     0, 0, RUBY_TYPED_FREE_IMMEDIATELY
 };
@@ -324,6 +332,88 @@ static VALUE game_object_make_render_props(VALUE self, VALUE texture)
     return robj_val;
 }
 
+static VALUE render_props_x_setter(VALUE self, VALUE val)
+{
+    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    props->x = NUM2DBL(val);
+    return self;
+}
+
+static VALUE render_props_y_setter(VALUE self, VALUE val)
+{
+    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    props->y = NUM2DBL(val);
+    return self;
+}
+
+static VALUE render_props_width_setter(VALUE self, VALUE val)
+{
+    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    props->width = NUM2DBL(val);
+    return self;
+}
+
+static VALUE render_props_height_setter(VALUE self, VALUE val)
+{
+    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    props->height = NUM2DBL(val);
+    return self;
+}
+
+static VALUE render_props_angle_setter(VALUE self, VALUE val)
+{
+    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    props->angle = NUM2DBL(val);
+    return self;
+}
+
+static VALUE render_props_frame_rect_setter(VALUE self, VALUE val)
+{
+    assert(rb_obj_is_kind_of(val, rect_class));
+
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+
+    Rectangle *rect;
+    TypedData_Get_Struct(val, Rectangle, &rect_type, rect);
+
+    props->frame_rect = *rect;
+    return self;
+}
+
+static VALUE rect_alloc(VALUE self)
+{
+    Rectangle *rect;
+    return TypedData_Make_Struct(self, Rectangle, &rect_type, rect);
+}
+
+static VALUE rect_initialize(VALUE self, VALUE x, VALUE y, VALUE width, VALUE height)
+{
+    assert(rb_obj_is_kind_of(x, rb_cNumeric));
+    assert(rb_obj_is_kind_of(y, rb_cNumeric));
+    assert(rb_obj_is_kind_of(width, rb_cNumeric));
+    assert(rb_obj_is_kind_of(height, rb_cNumeric));
+
+    Rectangle *rect;
+    TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
+    rect->x = NUM2DBL(x);
+    rect->y = NUM2DBL(y);
+    rect->width = NUM2DBL(width);
+    rect->height = NUM2DBL(height);
+
+    return self;
+}
+
 void Init_rbscene(void)
 {
     // init bindings
@@ -347,6 +437,18 @@ void Init_rbscene(void)
 
     // empty class definition for make_render_props
     render_props_class = rb_define_class_under(rbscene_module, "RenderProps", rb_cObject);
+    rb_define_method(render_props_class, "x=", render_props_x_setter, 1);
+    rb_define_method(render_props_class, "y=", render_props_y_setter, 1);
+    rb_define_method(render_props_class, "width=", render_props_width_setter, 1);
+    rb_define_method(render_props_class, "height=", render_props_height_setter, 1);
+    rb_define_method(render_props_class, "angle=", render_props_angle_setter, 1);
+    rb_define_method(render_props_class, "frame_rect=", render_props_frame_rect_setter, 1);
+
+    rect_class = rb_define_class_under(rbscene_module, "Rect", rb_cObject);
+    rb_define_alloc_func(rect_class, rect_alloc);
+    rb_define_method(rect_class, "initialize", rect_initialize, 4);
+    // TODO: add accessor methods to the Rect class, use Pygame for inspiration
+    // TODO: add to_s, should print x, y, width, height
 
     // reference existing Ruby classes
     game_object_class = rb_const_get(rbscene_module, rb_intern("GameObject"));

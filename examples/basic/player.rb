@@ -4,7 +4,7 @@ class Player < RBScene::GameObject
     angle 90
 
     def setup
-        @sound = RBScene::Sound.load("jump.wav")
+        @sound = Sound.load("jump.wav")
     end
 
     def update

@@ -158,15 +158,14 @@ static VALUE engine_run(VALUE self)
             }
         }
 
+        BeginMode2D(cam);
+
         // draw loop
         for (int i = 0; i < len; i++)
         {
             VALUE obj_val = rb_ary_entry(objects, i);
             if (rb_obj_is_kind_of(obj_val, game_object_class))
             {
-                // slow, need to draw all objects at once
-                BeginMode2D(cam);
-
                 VALUE sprite_val = rb_iv_get(obj_val, "@sprite");
                 VALUE x_val = rb_iv_get(obj_val, "@x");
                 VALUE y_val = rb_iv_get(obj_val, "@y");
@@ -186,8 +185,6 @@ static VALUE engine_run(VALUE self)
                 Rectangle dst = {.x = x, .y = y, .width = width, .height = height};
                 Vector2 origin = {.x = 0, .y = 0};
                 DrawTexturePro(tex->texture, src, dst, origin, angle, WHITE);
-
-                EndMode2D();
             }
             else
             {
@@ -197,6 +194,7 @@ static VALUE engine_run(VALUE self)
             }
         }
 
+        EndMode2D();
         EndDrawing();
     }
 

@@ -4,6 +4,8 @@
 // these are set on init
 static VALUE rbscene_module = Qnil;
 static VALUE game_object_class = Qnil;
+static VALUE scene_class = Qnil;
+static VALUE texture_class = Qnil;
 static VALUE input_singleton = Qnil;
 
 typedef struct
@@ -129,7 +131,11 @@ static VALUE engine_run(VALUE self)
     {
         // fetch the current scene's objects
         VALUE scene = rb_iv_get(rbscene_module, "@current_scene");
+        assert(rb_obj_is_kind_of(scene, scene_class));
+
         VALUE objects = rb_iv_get(scene, "@objects");
+        Check_Type(objects, T_ARRAY);
+        
         long len = RARRAY_LEN(objects);
 
         // handle inputs
@@ -166,6 +172,7 @@ static VALUE engine_run(VALUE self)
             VALUE obj_val = rb_ary_entry(objects, i);
             if (rb_obj_is_kind_of(obj_val, game_object_class))
             {
+                // do not rewrite yet, I want to do performance tests comparing this code to the alternatives
                 VALUE sprite_val = rb_iv_get(obj_val, "@sprite");
                 VALUE x_val = rb_iv_get(obj_val, "@x");
                 VALUE y_val = rb_iv_get(obj_val, "@y");
@@ -209,7 +216,10 @@ static VALUE texture_load(VALUE self, VALUE filename)
     Check_Type(filename, T_STRING);
     
     VALUE cache_val = rb_iv_get(self, "@cache");
+    Check_Type(cache_val, T_HASH);
+
     VALUE texture_val = rb_hash_lookup(cache_val, filename);
+    assert(rb_obj_is_kind_of(texture_val, texture_class));
 
     if (texture_val == Qnil)
     {
@@ -278,7 +288,7 @@ void Init_rbscene(void)
     VALUE engine_class = rb_define_class_under(rbscene_module, "Engine", rb_cObject);
     rb_define_singleton_method(engine_class, "run", engine_run, 0);
 
-    VALUE texture_class = rb_define_class_under(rbscene_module, "Texture", rb_cObject);
+    texture_class = rb_define_class_under(rbscene_module, "Texture", rb_cObject);
     rb_iv_set(texture_class, "@cache", rb_hash_new());
     rb_define_singleton_method(texture_class, "load", texture_load, 1);
     rb_define_method(texture_class, "width", texture_width, 0);
@@ -294,6 +304,7 @@ void Init_rbscene(void)
 
     // reference existing Ruby classes
     game_object_class = rb_const_get(rbscene_module, rb_intern("GameObject"));
+    scene_class = rb_const_get(rbscene_module, rb_intern("Scene"));
     VALUE input_class = rb_const_get(rbscene_module, rb_intern("Input"));
     input_singleton = rb_funcall(input_class, rb_intern("instance"), 0);
 

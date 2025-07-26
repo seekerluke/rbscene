@@ -13,7 +13,6 @@ module RBScene
             define("left", [:left])
             define("right", [:right])
             define("space", [:space])
-            define("space", [:z])
         end
 
         def define(name, codes)

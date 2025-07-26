@@ -1,5 +1,3 @@
-require "rbscene"
-
 class Player < RBScene::GameObject
     sprite "player.png"
     position x: 50, y: 20
@@ -10,6 +8,6 @@ class Player < RBScene::GameObject
     end
 
     def update
-        @sound.play if input.jump_press
+        @sound.play if input.space_press
     end
 end

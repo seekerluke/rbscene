@@ -332,6 +332,48 @@ static VALUE game_object_make_render_props(VALUE self, VALUE texture)
     return robj_val;
 }
 
+static VALUE render_props_x_getter(VALUE self)
+{
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    return DBL2NUM(props->x);
+}
+
+static VALUE render_props_y_getter(VALUE self)
+{
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    return DBL2NUM(props->y);
+}
+
+static VALUE render_props_width_getter(VALUE self)
+{
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    return DBL2NUM(props->width);
+}
+
+static VALUE render_props_height_getter(VALUE self)
+{
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    return DBL2NUM(props->height);
+}
+
+static VALUE render_props_angle_getter(VALUE self)
+{
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    return DBL2NUM(props->angle);
+}
+
+static VALUE render_props_frame_rect_getter(VALUE self)
+{
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    return TypedData_Wrap_Struct(rect_class, &rect_type, &props->frame_rect);
+}
+
 static VALUE render_props_x_setter(VALUE self, VALUE val)
 {
     assert(rb_obj_is_kind_of(val, rb_cNumeric));
@@ -435,8 +477,13 @@ void Init_rbscene(void)
     rb_define_singleton_method(sound_class, "load", sound_load, 1);
     rb_define_method(sound_class, "play", sound_play, 0);
 
-    // empty class definition for make_render_props
     render_props_class = rb_define_class_under(rbscene_module, "RenderProps", rb_cObject);
+    rb_define_method(render_props_class, "x", render_props_x_getter, 0);
+    rb_define_method(render_props_class, "y", render_props_y_getter, 0);
+    rb_define_method(render_props_class, "width", render_props_width_getter, 0);
+    rb_define_method(render_props_class, "height", render_props_height_getter, 0);
+    rb_define_method(render_props_class, "angle", render_props_angle_getter, 0);
+    rb_define_method(render_props_class, "frame_rect", render_props_frame_rect_getter, 0);
     rb_define_method(render_props_class, "x=", render_props_x_setter, 1);
     rb_define_method(render_props_class, "y=", render_props_y_setter, 1);
     rb_define_method(render_props_class, "width=", render_props_width_setter, 1);
@@ -449,6 +496,7 @@ void Init_rbscene(void)
     rb_define_method(rect_class, "initialize", rect_initialize, 4);
     // TODO: add accessor methods to the Rect class, use Pygame for inspiration
     // TODO: add to_s, should print x, y, width, height
+    // TODO: add to_a, should return [x, y, width, height]
 
     // reference existing Ruby classes
     game_object_class = rb_const_get(rbscene_module, rb_intern("GameObject"));

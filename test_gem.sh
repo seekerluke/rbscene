@@ -5,7 +5,3 @@ make
 cd ../..
 gem build rbscene.gemspec
 gem install rbscene-0.0.1.gem
-
-# run the example
-cd examples/basic
-ruby main.rb

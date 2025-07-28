@@ -33,6 +33,7 @@ typedef struct
     float width, height;
     float angle;
     Rectangle frame_rect;
+    bool hflip, vflip;
 } RBRenderProps;
 
 static void texture_free(void *ptr)
@@ -208,6 +209,10 @@ static VALUE engine_run(VALUE self)
                 RBRenderProps *props;
                 TypedData_Get_Struct(render_props_val, RBRenderProps, &render_props_type, props);
 
+                Rectangle src = props->frame_rect;
+                src.width = props->hflip ? -src.width : src.width;
+                src.height = props->vflip ? -src.height : src.height;
+
                 Rectangle dst = {
                     .x = props->x,
                     .y = props->y,
@@ -215,7 +220,7 @@ static VALUE engine_run(VALUE self)
                     .height = props->height
                 };
                 Vector2 origin = {.x = 0, .y = 0};
-                DrawTexturePro(tex->texture, props->frame_rect, dst, origin, props->angle, WHITE);
+                DrawTexturePro(tex->texture, src, dst, origin, props->angle, WHITE);
             }
             else
             {
@@ -275,9 +280,9 @@ static VALUE texture_height(VALUE self)
 static VALUE music_load(VALUE self, VALUE filename)
 {
     Check_Type(filename, T_STRING);
-    TypedData_Make_Struct(self, RBMusic, &music_type, current_music);
+    VALUE obj_val = TypedData_Make_Struct(self, RBMusic, &music_type, current_music);
     current_music->music = LoadMusicStream(StringValueCStr(filename)); // TODO: cache this
-    return Qnil;
+    return obj_val;
 }
 
 static VALUE music_play(VALUE self)
@@ -374,6 +379,20 @@ static VALUE render_props_frame_rect_getter(VALUE self)
     return TypedData_Wrap_Struct(rect_class, &rect_type, &props->frame_rect);
 }
 
+static VALUE render_props_hflip_getter(VALUE self)
+{
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    return props->hflip ? Qtrue : Qfalse;
+}
+
+static VALUE render_props_vflip_getter(VALUE self)
+{
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    return props->vflip ? Qtrue : Qfalse;
+}
+
 static VALUE render_props_x_setter(VALUE self, VALUE val)
 {
     assert(rb_obj_is_kind_of(val, rb_cNumeric));
@@ -433,6 +452,24 @@ static VALUE render_props_frame_rect_setter(VALUE self, VALUE val)
     return self;
 }
 
+static VALUE render_props_hflip_setter(VALUE self, VALUE val)
+{
+    assert(val == Qtrue || val == Qfalse);
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    props->hflip = val == Qtrue;
+    return self;
+}
+
+static VALUE render_props_vflip_setter(VALUE self, VALUE val)
+{
+    assert(val == Qtrue || val == Qfalse);
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    props->vflip = val == Qtrue;
+    return self;
+}
+
 static VALUE rect_alloc(VALUE self)
 {
     Rectangle *rect;
@@ -484,12 +521,16 @@ void Init_rbscene(void)
     rb_define_method(render_props_class, "height", render_props_height_getter, 0);
     rb_define_method(render_props_class, "angle", render_props_angle_getter, 0);
     rb_define_method(render_props_class, "frame_rect", render_props_frame_rect_getter, 0);
+    rb_define_method(render_props_class, "hflip", render_props_hflip_getter, 0);
+    rb_define_method(render_props_class, "vflip", render_props_vflip_getter, 0);
     rb_define_method(render_props_class, "x=", render_props_x_setter, 1);
     rb_define_method(render_props_class, "y=", render_props_y_setter, 1);
     rb_define_method(render_props_class, "width=", render_props_width_setter, 1);
     rb_define_method(render_props_class, "height=", render_props_height_setter, 1);
     rb_define_method(render_props_class, "angle=", render_props_angle_setter, 1);
     rb_define_method(render_props_class, "frame_rect=", render_props_frame_rect_setter, 1);
+    rb_define_method(render_props_class, "hflip=", render_props_hflip_setter, 1);
+    rb_define_method(render_props_class, "vflip=", render_props_vflip_setter, 1);
 
     rect_class = rb_define_class_under(rbscene_module, "Rect", rb_cObject);
     rb_define_alloc_func(rect_class, rect_alloc);

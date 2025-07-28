@@ -14,6 +14,8 @@ module RBScene
                 @render_props.width, @render_props.height = self.class.default_size(@texture)
                 @render_props.angle = self.class.default_angle
                 @render_props.frame_rect = self.class.default_frame_rect(@texture)
+                @render_props.hflip = self.class.default_hflip
+                @render_props.vflip = self.class.default_vflip
             end
 
             RBScene.scene.add(self)
@@ -78,6 +80,22 @@ module RBScene
             @render_props.frame_rect = rect
         end
 
+        def get_hflip
+            @render_props.hflip
+        end
+
+        def set_hflip(val)
+            @render_props.hflip = val
+        end
+
+        def get_vflip
+            @render_props.vflip
+        end
+
+        def set_vflip(val)
+            @render_props.vflip = val
+        end
+
         class << self
             def texture(path)
                 @default_texture = Texture.load(path)
@@ -117,6 +135,14 @@ module RBScene
 
             def default_frame_rect(texture)
                 @default_frame_rect || Rect.new(0, 0, *default_size(texture))
+            end
+
+            def default_hflip
+                @default_hflip || false
+            end
+
+            def default_vflip
+                @default_vflip || false
             end
         end
     end

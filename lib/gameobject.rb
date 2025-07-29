@@ -18,6 +18,9 @@ module RBScene
                 @render_props.vflip = self.class.default_vflip
             end
 
+            # each object's ticker manager should be updated globally
+            @ticker_manager = TickerManager.new
+
             RBScene.scene.add(self)
             setup
         end
@@ -32,6 +35,10 @@ module RBScene
 
         def input
             Input.instance
+        end
+
+        def ticker
+            @ticker_manager
         end
 
         def on(type_sym, &block)

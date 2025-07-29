@@ -1,3 +1,4 @@
+require_relative "tickermanager"
 require_relative "scene"
 require_relative "gameobject"
 require_relative "input"

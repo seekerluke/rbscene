@@ -8,7 +8,7 @@ static VALUE render_props_class = Qnil;
 static VALUE rect_class = Qnil;
 static VALUE scene_class = Qnil;
 static VALUE texture_class = Qnil;
-static VALUE input_singleton = Qnil;
+static VALUE input_class = Qnil;
 
 typedef struct
 {
@@ -170,7 +170,7 @@ static VALUE engine_run(VALUE self)
         long len = RARRAY_LEN(objects);
 
         // handle inputs
-        VALUE inputs = rb_iv_get(input_singleton, "@inputs");
+        VALUE inputs = rb_iv_get(input_class, "@inputs");
         Check_Type(inputs, T_HASH);
         rb_hash_foreach(inputs, inputs_foreach_callback, Qnil);
 
@@ -549,8 +549,7 @@ void Init_rbscene(void)
     rb_funcall(game_object_class, rb_intern("private"), 1, ID2SYM(rb_intern("make_render_props"))); // declare make_render_props private
 
     scene_class = rb_const_get(rbscene_module, rb_intern("Scene"));
-    VALUE input_class = rb_const_get(rbscene_module, rb_intern("Input"));
-    input_singleton = rb_funcall(input_class, rb_intern("instance"), 0);
+    input_class = rb_const_get(rbscene_module, rb_intern("Input"));
 
     // init raylib
     InitWindow(320, 288, "Game");

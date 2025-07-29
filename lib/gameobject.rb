@@ -33,10 +33,6 @@ module RBScene
         def update
         end
 
-        def input
-            Input.instance
-        end
-
         def ticker
             @ticker_manager
         end

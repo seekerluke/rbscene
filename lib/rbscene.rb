@@ -1,3 +1,5 @@
+require_relative "vector2"
+require_relative "rect"
 require_relative "tickermanager"
 require_relative "scene"
 require_relative "gameobject"

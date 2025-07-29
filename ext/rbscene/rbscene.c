@@ -494,6 +494,11 @@ static VALUE rect_initialize(VALUE self, VALUE x, VALUE y, VALUE width, VALUE he
     rect->width = NUM2DBL(width);
     rect->height = NUM2DBL(height);
 
+    rb_iv_set(self, "@x", x);
+    rb_iv_set(self, "@y", y);
+    rb_iv_set(self, "@w", width);
+    rb_iv_set(self, "@h", height);
+
     return self;
 }
 
@@ -539,9 +544,7 @@ void Init_rbscene(void)
     rect_class = rb_define_class_under(rbscene_module, "Rect", rb_cObject);
     rb_define_alloc_func(rect_class, rect_alloc);
     rb_define_method(rect_class, "initialize", rect_initialize, 4);
-    // TODO: add accessor methods to the Rect class, use Pygame for inspiration
-    // TODO: add to_s, should print x, y, width, height
-    // TODO: add to_a, should return [x, y, width, height]
+    // more defs in rect.rb
 
     // reference existing Ruby classes
     game_object_class = rb_const_get(rbscene_module, rb_intern("GameObject"));

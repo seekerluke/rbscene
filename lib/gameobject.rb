@@ -13,7 +13,7 @@ module RBScene
                 @render_props.x, @render_props.y = self.class.default_position
                 @render_props.width, @render_props.height = self.class.default_size(@texture)
                 @render_props.angle = self.class.default_angle
-                @render_props.frame_rect = self.class.default_frame_rect(@texture)
+                @render_props.frame = self.class.default_frame(@texture)
                 @render_props.hflip = self.class.default_hflip
                 @render_props.vflip = self.class.default_vflip
             end
@@ -75,16 +75,16 @@ module RBScene
             @render_props.angle = angle
         end
 
-        def set_frame_rect(rect)
-            @render_props.frame_rect = rect
+        def set_frame(rect)
+            @render_props.frame = rect
         end
 
-        def get_frame_rect
-            @render_props.frame_rect
+        def get_frame
+            @render_props.frame
         end
 
-        def set_frame_rect(rect)
-            @render_props.frame_rect = rect
+        def set_frame(rect)
+            @render_props.frame = rect
         end
 
         def get_hflip
@@ -120,8 +120,8 @@ module RBScene
                 @default_angle = angle
             end
 
-            def frame_rect(rect)
-                @default_frame_rect = rect
+            def frame(rect)
+                @default_frame = rect
             end
 
             def default_texture
@@ -140,8 +140,8 @@ module RBScene
                 @default_angle || 0
             end
 
-            def default_frame_rect(texture)
-                @default_frame_rect || Rect.new(0, 0, *default_size(texture))
+            def default_frame(texture)
+                @default_frame || Rect.new(0, 0, *default_size(texture))
             end
 
             def default_hflip

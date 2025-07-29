@@ -32,7 +32,7 @@ typedef struct
     float x, y;
     float width, height;
     float angle;
-    Rectangle frame_rect;
+    Rectangle frame;
     bool hflip, vflip;
 } RBRenderProps;
 
@@ -144,7 +144,11 @@ static int inputs_foreach_callback(VALUE key, VALUE value, VALUE arg)
 {
     // entry looks like this: "right": {right: true, gp_right: false}
     // key is a string, key inside the hash is a symbol, value is a bool
-    Check_Type(key, T_STRING);
+    if (TYPE(key) != T_STRING && TYPE(key) != T_SYMBOL)
+    {
+        rb_raise(rb_eTypeError, "Expected String or Symbol");
+    }
+
     Check_Type(value, T_HASH);
 
     rb_hash_foreach(value, inputs_inner_foreach_callback, value);
@@ -209,7 +213,7 @@ static VALUE engine_run(VALUE self)
                 RBRenderProps *props;
                 TypedData_Get_Struct(render_props_val, RBRenderProps, &render_props_type, props);
 
-                Rectangle src = props->frame_rect;
+                Rectangle src = props->frame;
                 src.width = props->hflip ? -src.width : src.width;
                 src.height = props->vflip ? -src.height : src.height;
 
@@ -327,7 +331,7 @@ static VALUE game_object_make_render_props(VALUE self, VALUE texture)
     robj->width = tex->texture.width;
     robj->height = tex->texture.height;
     robj->angle = 0;
-    robj->frame_rect = (Rectangle){
+    robj->frame = (Rectangle){
         .x = 0,
         .y = 0,
         .width = tex->texture.width,
@@ -372,11 +376,11 @@ static VALUE render_props_angle_getter(VALUE self)
     return DBL2NUM(props->angle);
 }
 
-static VALUE render_props_frame_rect_getter(VALUE self)
+static VALUE render_props_frame_getter(VALUE self)
 {
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
-    return TypedData_Wrap_Struct(rect_class, &rect_type, &props->frame_rect);
+    return TypedData_Wrap_Struct(rect_class, &rect_type, &props->frame);
 }
 
 static VALUE render_props_hflip_getter(VALUE self)
@@ -438,7 +442,7 @@ static VALUE render_props_angle_setter(VALUE self, VALUE val)
     return self;
 }
 
-static VALUE render_props_frame_rect_setter(VALUE self, VALUE val)
+static VALUE render_props_frame_setter(VALUE self, VALUE val)
 {
     assert(rb_obj_is_kind_of(val, rect_class));
 
@@ -448,7 +452,7 @@ static VALUE render_props_frame_rect_setter(VALUE self, VALUE val)
     Rectangle *rect;
     TypedData_Get_Struct(val, Rectangle, &rect_type, rect);
 
-    props->frame_rect = *rect;
+    props->frame = *rect;
     return self;
 }
 
@@ -520,7 +524,7 @@ void Init_rbscene(void)
     rb_define_method(render_props_class, "width", render_props_width_getter, 0);
     rb_define_method(render_props_class, "height", render_props_height_getter, 0);
     rb_define_method(render_props_class, "angle", render_props_angle_getter, 0);
-    rb_define_method(render_props_class, "frame_rect", render_props_frame_rect_getter, 0);
+    rb_define_method(render_props_class, "frame", render_props_frame_getter, 0);
     rb_define_method(render_props_class, "hflip", render_props_hflip_getter, 0);
     rb_define_method(render_props_class, "vflip", render_props_vflip_getter, 0);
     rb_define_method(render_props_class, "x=", render_props_x_setter, 1);
@@ -528,7 +532,7 @@ void Init_rbscene(void)
     rb_define_method(render_props_class, "width=", render_props_width_setter, 1);
     rb_define_method(render_props_class, "height=", render_props_height_setter, 1);
     rb_define_method(render_props_class, "angle=", render_props_angle_setter, 1);
-    rb_define_method(render_props_class, "frame_rect=", render_props_frame_rect_setter, 1);
+    rb_define_method(render_props_class, "frame=", render_props_frame_setter, 1);
     rb_define_method(render_props_class, "hflip=", render_props_hflip_setter, 1);
     rb_define_method(render_props_class, "vflip=", render_props_vflip_setter, 1);
 

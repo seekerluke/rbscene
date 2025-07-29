@@ -514,6 +514,7 @@ void Init_rbscene(void)
     rb_define_singleton_method(texture_class, "load", texture_load, 1);
     rb_define_method(texture_class, "width", texture_width, 0);
     rb_define_method(texture_class, "height", texture_height, 0);
+    // more methods defined in Ruby
 
     VALUE music_class = rb_define_class_under(rbscene_module, "Music", rb_cObject);
     rb_define_singleton_method(music_class, "load", music_load, 1);

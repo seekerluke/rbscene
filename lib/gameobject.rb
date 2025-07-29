@@ -37,12 +37,12 @@ module RBScene
             @ticker_manager
         end
 
-        def on(type_sym, &block)
-            @events[type_sym] << block
+        def get_texture
+            @texture
         end
 
-        def handle_event(type_sym, *args)
-            @events[type_sym].each { |handler| handler.call(*args) }
+        def set_texture
+            raise "no impl for set_texture"
         end
 
         def get_position
@@ -63,7 +63,7 @@ module RBScene
             @render_props.height = height
         end
 
-         def get_angle
+        def get_angle
             @render_props.angle
         end
 

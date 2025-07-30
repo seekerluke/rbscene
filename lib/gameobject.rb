@@ -21,7 +21,6 @@ module RBScene
             # each object's ticker manager should be updated globally
             @ticker_manager = TickerManager.new
 
-            RBScene.scene.add(self)
             setup
         end
 

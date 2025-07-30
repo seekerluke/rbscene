@@ -7,6 +7,7 @@ static VALUE game_object_class = Qnil;
 static VALUE render_props_class = Qnil;
 static VALUE rect_class = Qnil;
 static VALUE scene_class = Qnil;
+static VALUE engine_config_class = Qnil;
 static VALUE texture_class = Qnil;
 static VALUE sound_class = Qnil;
 static VALUE music_class = Qnil;
@@ -243,6 +244,30 @@ static VALUE engine_run(VALUE self)
     // should not need to clean up loaded textures and audio, when Ruby closes they should be GC'd
     CloseAudioDevice();
     CloseWindow();
+    return Qnil;
+}
+
+static VALUE engine_configure(VALUE self)
+{
+    assert(rb_block_given_p());
+
+    VALUE config_val = rb_funcall(engine_config_class, rb_intern("new"), 0);
+    rb_yield(config_val);
+
+    VALUE window_title_val = rb_iv_get(config_val, "@window_title");
+    Check_Type(window_title_val, T_STRING);
+    VALUE window_size_val = rb_iv_get(config_val, "@window_size");
+    Check_Type(window_size_val, T_ARRAY);
+
+    VALUE window_width_val = rb_ary_entry(window_size_val, 0);
+    assert(TYPE(window_width_val) == T_FIXNUM || TYPE(window_width_val) == T_FLOAT);
+    VALUE window_height_val = rb_ary_entry(window_size_val, 1);
+    assert(TYPE(window_height_val) == T_FIXNUM || TYPE(window_height_val) == T_FLOAT);
+
+    InitWindow(NUM2UINT(window_width_val), NUM2UINT(window_height_val), StringValueCStr(window_title_val));
+    InitAudioDevice();
+    SetTargetFPS(60);
+
     return Qnil;
 }
 
@@ -540,6 +565,7 @@ void Init_rbscene(void)
     // init bindings
     rbscene_module = rb_define_module("RBScene");
     VALUE engine_class = rb_define_class_under(rbscene_module, "Engine", rb_cObject);
+    rb_define_singleton_method(engine_class, "configure", engine_configure, 0);
     rb_define_singleton_method(engine_class, "run", engine_run, 0);
 
     VALUE assets_class = rb_define_class_under(rbscene_module, "Assets", rb_cObject);
@@ -578,7 +604,6 @@ void Init_rbscene(void)
     rect_class = rb_define_class_under(rbscene_module, "Rect", rb_cObject);
     rb_define_alloc_func(rect_class, rect_alloc);
     rb_define_method(rect_class, "initialize", rect_initialize, 4);
-    // more defs in rect.rb
 
     // reference existing Ruby classes
     game_object_class = rb_const_get(rbscene_module, rb_intern("GameObject"));
@@ -587,9 +612,5 @@ void Init_rbscene(void)
 
     scene_class = rb_const_get(rbscene_module, rb_intern("Scene"));
     input_class = rb_const_get(rbscene_module, rb_intern("Input"));
-
-    // init raylib
-    InitWindow(320, 288, "Game");
-    InitAudioDevice();
-    SetTargetFPS(60);
+    engine_config_class = rb_const_get(rbscene_module, rb_intern("EngineConfig"));
 }

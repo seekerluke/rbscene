@@ -1,3 +1,4 @@
+require_relative "engineconfig"
 require_relative "vector2"
 require_relative "rect"
 require_relative "assets"

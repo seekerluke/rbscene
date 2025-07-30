@@ -101,7 +101,7 @@ module RBScene
 
         class << self
             def texture(path)
-                @default_texture = Texture.load(path)
+                @default_texture = Assets.load_texture(path)
             end
 
             def position(x: 0, y: 0)

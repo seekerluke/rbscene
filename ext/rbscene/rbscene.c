@@ -8,6 +8,8 @@ static VALUE render_props_class = Qnil;
 static VALUE rect_class = Qnil;
 static VALUE scene_class = Qnil;
 static VALUE texture_class = Qnil;
+static VALUE sound_class = Qnil;
+static VALUE music_class = Qnil;
 static VALUE input_class = Qnil;
 
 typedef struct
@@ -244,11 +246,11 @@ static VALUE engine_run(VALUE self)
     return Qnil;
 }
 
-static VALUE texture_load(VALUE self, VALUE filename)
+static VALUE assets_load_texture(VALUE self, VALUE filename)
 {
     Check_Type(filename, T_STRING);
     
-    VALUE cache_val = rb_iv_get(self, "@cache");
+    VALUE cache_val = rb_iv_get(self, "@textures");
     Check_Type(cache_val, T_HASH);
 
     VALUE texture_val = rb_hash_lookup(cache_val, filename);
@@ -258,13 +260,63 @@ static VALUE texture_load(VALUE self, VALUE filename)
     {
         // cache doesn't have an entry at this key, make a new one
         RBTexture *tex;
-        texture_val = TypedData_Make_Struct(self, RBTexture, &texture_type, tex);
+        texture_val = TypedData_Make_Struct(texture_class, RBTexture, &texture_type, tex);
         tex->texture = LoadTexture(StringValueCStr(filename));
+        // TODO: should raise error if texture loading failed
         rb_hash_aset(cache_val, filename, texture_val);
     }
 
     // if cache already has this entry, just return it
     return texture_val;
+}
+
+static VALUE assets_load_sound(VALUE self, VALUE filename)
+{
+    Check_Type(filename, T_STRING);
+
+    VALUE cache_val = rb_iv_get(self, "@sounds");
+    Check_Type(cache_val, T_HASH);
+
+    VALUE sound_val = rb_hash_lookup(cache_val, filename);
+    assert(rb_obj_is_kind_of(sound_val, sound_class));
+
+    if (sound_val == Qnil)
+    {
+        // cache doesn't have an entry at this key, make a new one
+        RBSound *sound;
+        sound_val = TypedData_Make_Struct(sound_class, RBSound, &sound_type, sound);
+        sound->sound = LoadSound(StringValueCStr(filename));
+        // TODO: should raise error if sound loading failed
+        rb_hash_aset(cache_val, filename, sound_val);
+    }
+
+    // if cache already has this entry, just return it
+    return sound_val;
+}
+
+static VALUE assets_load_music(VALUE self, VALUE filename)
+{
+    Check_Type(filename, T_STRING);
+
+    VALUE cache_val = rb_iv_get(self, "@music");
+    Check_Type(cache_val, T_HASH);
+
+    VALUE music_val = rb_hash_lookup(cache_val, filename);
+    assert(rb_obj_is_kind_of(music_val, music_class));
+
+    if (music_val == Qnil)
+    {
+        // cache doesn't have an entry at this key, make a new one
+        RBMusic *music;
+        music_val = TypedData_Make_Struct(music_class, RBMusic, &music_type, music);
+        music->music = LoadMusicStream(StringValueCStr(filename));
+        current_music = music;
+        // TODO: should raise error if sound loading failed
+        rb_hash_aset(cache_val, filename, music_val);
+    }
+
+    // if cache already has this entry, just return it
+    return music_val;
 }
 
 static VALUE texture_width(VALUE self)
@@ -281,29 +333,10 @@ static VALUE texture_height(VALUE self)
     return DBL2NUM(tex->texture.height);
 }
 
-static VALUE music_load(VALUE self, VALUE filename)
-{
-    Check_Type(filename, T_STRING);
-    VALUE obj_val = TypedData_Make_Struct(self, RBMusic, &music_type, current_music);
-    current_music->music = LoadMusicStream(StringValueCStr(filename)); // TODO: cache this
-    return obj_val;
-}
-
 static VALUE music_play(VALUE self)
 {
     if (current_music) PlayMusicStream(current_music->music);
     return Qnil;
-}
-
-static VALUE sound_load(VALUE self, VALUE filename)
-{
-    Check_Type(filename, T_STRING);
-
-    RBSound *sound;
-    VALUE obj_val = TypedData_Make_Struct(self, RBSound, &sound_type, sound);
-
-    sound->sound = LoadSound(StringValueCStr(filename));
-    return obj_val;
 }
 
 static VALUE sound_play(VALUE self)
@@ -509,19 +542,19 @@ void Init_rbscene(void)
     VALUE engine_class = rb_define_class_under(rbscene_module, "Engine", rb_cObject);
     rb_define_singleton_method(engine_class, "run", engine_run, 0);
 
+    VALUE assets_class = rb_define_class_under(rbscene_module, "Assets", rb_cObject);
+    rb_define_singleton_method(assets_class, "load_texture", assets_load_texture, 1);
+    rb_define_singleton_method(assets_class, "load_sound", assets_load_sound, 1);
+    rb_define_singleton_method(assets_class, "load_music", assets_load_music, 1);
+
     texture_class = rb_define_class_under(rbscene_module, "Texture", rb_cObject);
-    rb_iv_set(texture_class, "@cache", rb_hash_new());
-    rb_define_singleton_method(texture_class, "load", texture_load, 1);
     rb_define_method(texture_class, "width", texture_width, 0);
     rb_define_method(texture_class, "height", texture_height, 0);
-    // more methods defined in Ruby
 
-    VALUE music_class = rb_define_class_under(rbscene_module, "Music", rb_cObject);
-    rb_define_singleton_method(music_class, "load", music_load, 1);
-    rb_define_singleton_method(music_class, "play", music_play, 0);
+    music_class = rb_define_class_under(rbscene_module, "Music", rb_cObject);
+    rb_define_method(music_class, "play", music_play, 0);
 
-    VALUE sound_class = rb_define_class_under(rbscene_module, "Sound", rb_cObject);
-    rb_define_singleton_method(sound_class, "load", sound_load, 1);
+    sound_class = rb_define_class_under(rbscene_module, "Sound", rb_cObject);
     rb_define_method(sound_class, "play", sound_play, 0);
 
     render_props_class = rb_define_class_under(rbscene_module, "RenderProps", rb_cObject);

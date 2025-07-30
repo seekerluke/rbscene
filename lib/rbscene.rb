@@ -1,5 +1,6 @@
 require_relative "vector2"
 require_relative "rect"
+require_relative "assets"
 require_relative "texture"
 require_relative "tickermanager"
 require_relative "scene"

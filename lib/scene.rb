@@ -2,23 +2,17 @@ module RBScene
     class Scene
         def initialize
             @objects = []
+            setup
         end
 
-        def add(obj)
-            @objects.append obj
-        end
-    end
-
-    # Global on RBScene... maybe there's a better way to store these? RBScene will expand quickly.
-    @current_scene = Scene.new
-
-    class << self
-        def scene
-            @current_scene
+        def create(type, x: 0, y: 0)
+            gobj = type.new
+            gobj.set_position(x: x, y: y)
+            @objects.push(gobj)
         end
 
-        def switch_scene(next_scene)
-            @current_scene = next_scene
+        # method stub to be overridden
+        def setup
         end
     end
 end

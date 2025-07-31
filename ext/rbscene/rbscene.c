@@ -3,11 +3,11 @@
 
 // global refs to modules and classes, usually for type checks
 static VALUE rbscene_module = Qnil;
+static VALUE engine_class = Qnil;
 static VALUE game_object_class = Qnil;
 static VALUE render_props_class = Qnil;
 static VALUE rect_class = Qnil;
 static VALUE scene_class = Qnil;
-static VALUE engine_config_class = Qnil;
 static VALUE texture_class = Qnil;
 static VALUE sound_class = Qnil;
 static VALUE music_class = Qnil;
@@ -38,6 +38,13 @@ typedef struct
     Rectangle frame;
     bool hflip, vflip;
 } RBRenderProps;
+
+typedef struct
+{
+    int window_width;
+    int window_height;
+    const char* window_title;
+} RBEngineConfig;
 
 static void texture_free(void *ptr)
 {
@@ -159,12 +166,56 @@ static int inputs_foreach_callback(VALUE key, VALUE value, VALUE arg)
     return ST_CONTINUE;
 }
 
+static RBEngineConfig get_engine_config() {
+    VALUE config_val = rb_iv_get(engine_class, "@config");
+
+    VALUE window_title_val = rb_iv_get(config_val, "@window_title");
+    Check_Type(window_title_val, T_STRING);
+
+    VALUE window_size_val = rb_iv_get(config_val, "@window_size");
+    Check_Type(window_size_val, T_ARRAY);
+
+    VALUE window_width_val = rb_ary_entry(window_size_val, 0);
+    VALUE window_height_val = rb_ary_entry(window_size_val, 1);
+
+    assert(TYPE(window_width_val) == T_FIXNUM || TYPE(window_width_val) == T_FLOAT);
+    assert(TYPE(window_height_val) == T_FIXNUM || TYPE(window_height_val) == T_FLOAT);
+
+    RBEngineConfig config;
+    config.window_title = StringValueCStr(window_title_val);
+    config.window_width = NUM2UINT(window_width_val);
+    config.window_height = NUM2UINT(window_height_val);
+
+    return config;
+}
+
+static VALUE engine_init(VALUE self)
+{
+    RBEngineConfig config = get_engine_config();
+
+    InitWindow(config.window_width, config.window_height, config.window_title);
+    InitAudioDevice();
+    SetTargetFPS(60);
+
+    return Qnil;
+}
+
+static VALUE engine_update(VALUE self)
+{
+    RBEngineConfig config = get_engine_config();
+
+    SetWindowTitle(config.window_title);
+    SetWindowSize(config.window_width, config.window_height);
+
+    return Qnil;
+}
+
 static VALUE engine_run(VALUE self)
 {
     while (!WindowShouldClose())
     {
         // fetch the current scene's objects
-        VALUE scene = rb_iv_get(rbscene_module, "@current_scene");
+        VALUE scene = rb_iv_get(engine_class, "@current_scene");
         assert(rb_obj_is_kind_of(scene, scene_class));
 
         VALUE objects = rb_iv_get(scene, "@objects");
@@ -244,30 +295,6 @@ static VALUE engine_run(VALUE self)
     // should not need to clean up loaded textures and audio, when Ruby closes they should be GC'd
     CloseAudioDevice();
     CloseWindow();
-    return Qnil;
-}
-
-static VALUE engine_configure(VALUE self)
-{
-    assert(rb_block_given_p());
-
-    VALUE config_val = rb_funcall(engine_config_class, rb_intern("new"), 0);
-    rb_yield(config_val);
-
-    VALUE window_title_val = rb_iv_get(config_val, "@window_title");
-    Check_Type(window_title_val, T_STRING);
-    VALUE window_size_val = rb_iv_get(config_val, "@window_size");
-    Check_Type(window_size_val, T_ARRAY);
-
-    VALUE window_width_val = rb_ary_entry(window_size_val, 0);
-    assert(TYPE(window_width_val) == T_FIXNUM || TYPE(window_width_val) == T_FLOAT);
-    VALUE window_height_val = rb_ary_entry(window_size_val, 1);
-    assert(TYPE(window_height_val) == T_FIXNUM || TYPE(window_height_val) == T_FLOAT);
-
-    InitWindow(NUM2UINT(window_width_val), NUM2UINT(window_height_val), StringValueCStr(window_title_val));
-    InitAudioDevice();
-    SetTargetFPS(60);
-
     return Qnil;
 }
 
@@ -564,9 +591,10 @@ void Init_rbscene(void)
 {
     // init bindings
     rbscene_module = rb_define_module("RBScene");
-    VALUE engine_class = rb_define_class_under(rbscene_module, "Engine", rb_cObject);
-    rb_define_singleton_method(engine_class, "configure", engine_configure, 0);
+    engine_class = rb_define_class_under(rbscene_module, "Engine", rb_cObject);
+    rb_define_singleton_method(engine_class, "init", engine_init, 0);
     rb_define_singleton_method(engine_class, "run", engine_run, 0);
+    rb_define_singleton_method(engine_class, "update", engine_update, 0);
 
     VALUE assets_class = rb_define_class_under(rbscene_module, "Assets", rb_cObject);
     rb_define_singleton_method(assets_class, "load_texture", assets_load_texture, 1);
@@ -612,5 +640,4 @@ void Init_rbscene(void)
 
     scene_class = rb_const_get(rbscene_module, rb_intern("Scene"));
     input_class = rb_const_get(rbscene_module, rb_intern("Input"));
-    engine_config_class = rb_const_get(rbscene_module, rb_intern("EngineConfig"));
 }

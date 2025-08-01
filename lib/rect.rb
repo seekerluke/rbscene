@@ -47,8 +47,7 @@ module RBScene
         end
 
         def topleft=(vec)
-            self.left = vec.x
-            self.top = vec.y
+            self.left, self.top = vec
         end
 
         def bottomleft
@@ -56,8 +55,7 @@ module RBScene
         end
 
         def bottomleft=(vec)
-            self.left = vec.x
-            self.bottom = vec.y
+            self.left, self.bottom = vec
         end
 
         def topright
@@ -65,8 +63,7 @@ module RBScene
         end
 
         def topright=(vec)
-            self.right = vec.x
-            self.top = vec.y
+            self.right, self.top = vec
         end
 
         def bottomright
@@ -74,8 +71,7 @@ module RBScene
         end
 
         def bottomright=(vec)
-            self.right = vec.x
-            self.bottom = vec.y
+            self.right, self.bottom = vec
         end
 
         # midpoints
@@ -85,8 +81,7 @@ module RBScene
         end
 
         def midtop=(vec)
-            self.centerx = vec.x
-            self.top = vec.y
+            self.centerx, self.top = vec
         end
 
         def midbottom
@@ -94,8 +89,7 @@ module RBScene
         end
 
         def midbottom=(vec)
-            self.centerx = vec.x
-            self.bottom = vec.y
+            self.centerx, self.bottom = vec
         end
 
         def midleft
@@ -103,8 +97,7 @@ module RBScene
         end
 
         def midleft=(vec)
-            self.left = vec.x
-            self.centery = vec.y
+            self.left, self.centery = vec
         end
 
         def midright
@@ -112,8 +105,7 @@ module RBScene
         end
 
         def midright=(vec)
-            self.right = vec.x
-            self.centery = vec.y
+            self.right, self.centery = vec
         end
 
         # center
@@ -123,8 +115,7 @@ module RBScene
         end
 
         def center=(vec)
-            self.centerx = vec.x
-            self.centery = vec.y
+            self.centerx, self.centery = vec
         end
 
         def centerx
@@ -168,6 +159,17 @@ module RBScene
 
         def height=(val)
             @h = val
+        end
+
+        # collision
+
+        def collides?(other)
+            return false if other.nil?
+
+            @x < other.x + other.w &&
+            @x + @w > other.x &&
+            @y < other.y + other.h &&
+            @y + @h > other.y
         end
 
         # helpers

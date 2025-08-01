@@ -2,7 +2,9 @@ module RBScene
     class GameObject
         include RBScene
 
-        def initialize
+        attr_accessor :scene
+
+        def initialize(x: nil, y: nil, width: nil, height: nil, angle: nil, frame: nil, hflip: nil, vflip: nil)
             # array of events per key
             @events = Hash.new { |h, k| h[k] = [] }
 
@@ -10,12 +12,21 @@ module RBScene
             if @texture
                 # make_render_props is a private, internal C function that creates a blank render props object
                 @render_props = make_render_props(self.class.default_texture)
-                @render_props.x, @render_props.y = self.class.default_position
-                @render_props.width, @render_props.height = self.class.default_size(@texture)
-                @render_props.angle = self.class.default_angle
-                @render_props.frame = self.class.default_frame(@texture)
-                @render_props.hflip = self.class.default_hflip
-                @render_props.vflip = self.class.default_vflip
+
+                default_x, default_y = self.class.default_position
+                @render_props.x = x || default_x
+                @render_props.y = y || default_y
+
+                default_width, default_height = self.class.default_size(@texture)
+                @render_props.width = width || default_width
+                @render_props.height = height || default_height
+
+                @render_props.angle = angle || self.class.default_angle
+
+                @render_props.frame = frame || self.class.default_frame(@texture)
+
+                @render_props.hflip = hflip || self.class.default_hflip
+                @render_props.vflip = vflip || self.class.default_vflip
             end
 
             # each object's ticker manager should be updated globally

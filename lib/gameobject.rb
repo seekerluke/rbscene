@@ -43,6 +43,10 @@ module RBScene
         def update
         end
 
+        def destroy
+            scene.destroy(self)
+        end
+
         def ticker
             @ticker_manager
         end

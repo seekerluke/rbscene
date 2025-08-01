@@ -19,6 +19,10 @@ module RBScene
             @objects.select { |obj| obj.is_a?(type) }
         end
 
+        def destroy(obj)
+            @objects.delete(obj)
+        end
+
         # method stub to be overridden
         def setup
         end

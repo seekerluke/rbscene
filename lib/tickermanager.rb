@@ -37,7 +37,7 @@ module RBScene
             return if !t[:running]
 
             t[:counter] += 1
-            if t[:counter] > t[:limit]
+            if t[:counter] > t[:rate]
                 t[:value] += 1
                 t[:value] = 0 if t[:value] >= t[:limit]
                 t[:counter] = 0

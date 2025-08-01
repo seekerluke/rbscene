@@ -220,8 +220,6 @@ static VALUE engine_run(VALUE self)
 
         VALUE objects = rb_iv_get(scene, "@objects");
         Check_Type(objects, T_ARRAY);
-        
-        long len = RARRAY_LEN(objects);
 
         // handle inputs
         VALUE inputs = rb_iv_get(input_class, "@inputs");
@@ -234,7 +232,8 @@ static VALUE engine_run(VALUE self)
         ClearBackground(RAYWHITE);
 
         // update loop
-        for (int i = 0; i < len; i++)
+        // do not optimise by making RARRAY_LEN local, objects can be destroyed during update
+        for (int i = 0; i < RARRAY_LEN(objects); i++)
         {
             VALUE obj_val = rb_ary_entry(objects, i);
             if (rb_obj_is_kind_of(obj_val, game_object_class))
@@ -252,7 +251,7 @@ static VALUE engine_run(VALUE self)
         BeginMode2D(cam);
 
         // draw loop
-        for (int i = 0; i < len; i++)
+        for (int i = 0; i < RARRAY_LEN(objects); i++)
         {
             VALUE obj_val = rb_ary_entry(objects, i);
             if (rb_obj_is_kind_of(obj_val, game_object_class))

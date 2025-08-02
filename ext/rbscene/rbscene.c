@@ -132,6 +132,8 @@ static int inputs_inner_foreach_callback(VALUE key, VALUE value, VALUE arg)
 {
     // inner entry = {right: [true, false, false], gp_right: [false, false, false]}
     Check_Type(key, T_SYMBOL);
+
+    // asserts for internal values are fine, change to rb_raise if this ever becomes user facing code
     assert(value == Qtrue || value == Qfalse);
 
     // create a new array to store the key state results in
@@ -178,8 +180,11 @@ static RBEngineConfig get_engine_config() {
     VALUE window_width_val = rb_ary_entry(window_size_val, 0);
     VALUE window_height_val = rb_ary_entry(window_size_val, 1);
 
-    assert(TYPE(window_width_val) == T_FIXNUM || TYPE(window_width_val) == T_FLOAT);
-    assert(TYPE(window_height_val) == T_FIXNUM || TYPE(window_height_val) == T_FLOAT);
+    if (!rb_obj_is_kind_of(window_width_val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "Window width is not a Numeric");
+
+    if (!rb_obj_is_kind_of(window_height_val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "Window height is not a Numeric");
 
     RBEngineConfig config;
     config.window_title = StringValueCStr(window_title_val);
@@ -487,7 +492,7 @@ static VALUE render_props_vflip_getter(VALUE self)
 
 static VALUE render_props_x_setter(VALUE self, VALUE val)
 {
-    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "x is not a Numeric");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->x = NUM2DBL(val);
@@ -496,7 +501,7 @@ static VALUE render_props_x_setter(VALUE self, VALUE val)
 
 static VALUE render_props_y_setter(VALUE self, VALUE val)
 {
-    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "y is not a Numeric");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->y = NUM2DBL(val);
@@ -505,7 +510,7 @@ static VALUE render_props_y_setter(VALUE self, VALUE val)
 
 static VALUE render_props_width_setter(VALUE self, VALUE val)
 {
-    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "width is not a Numeric");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->width = NUM2DBL(val);
@@ -514,7 +519,7 @@ static VALUE render_props_width_setter(VALUE self, VALUE val)
 
 static VALUE render_props_height_setter(VALUE self, VALUE val)
 {
-    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "height is not a Numeric");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->height = NUM2DBL(val);
@@ -523,7 +528,7 @@ static VALUE render_props_height_setter(VALUE self, VALUE val)
 
 static VALUE render_props_angle_setter(VALUE self, VALUE val)
 {
-    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "angle is not a Numeric");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->angle = NUM2DBL(val);
@@ -532,7 +537,7 @@ static VALUE render_props_angle_setter(VALUE self, VALUE val)
 
 static VALUE render_props_frame_setter(VALUE self, VALUE val)
 {
-    assert(rb_obj_is_kind_of(val, rect_class));
+    if (!rb_obj_is_kind_of(val, rect_class)) rb_raise(rb_eTypeError, "frame is not a Rect");
 
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
@@ -546,7 +551,7 @@ static VALUE render_props_frame_setter(VALUE self, VALUE val)
 
 static VALUE render_props_hflip_setter(VALUE self, VALUE val)
 {
-    assert(val == Qtrue || val == Qfalse);
+    if (val != Qtrue && val != Qfalse) rb_raise(rb_eTypeError, "hflip is not a Boolean");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->hflip = val == Qtrue;
@@ -555,7 +560,7 @@ static VALUE render_props_hflip_setter(VALUE self, VALUE val)
 
 static VALUE render_props_vflip_setter(VALUE self, VALUE val)
 {
-    assert(val == Qtrue || val == Qfalse);
+    if (val != Qtrue && val != Qfalse) rb_raise(rb_eTypeError, "vflip is not a Boolean");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->vflip = val == Qtrue;

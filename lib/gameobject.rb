@@ -4,7 +4,7 @@ module RBScene
 
         attr_accessor :scene
 
-        def initialize(x: nil, y: nil, width: nil, height: nil, angle: nil, frame: nil, hflip: nil, vflip: nil)
+        def initialize(x: nil, y: nil, width: nil, height: nil, angle: nil, frame: nil, hflip: nil, vflip: nil, origin_x: nil, origin_y: nil)
             # array of events per key
             @events = Hash.new { |h, k| h[k] = [] }
 
@@ -27,6 +27,9 @@ module RBScene
 
                 @render_props.hflip = hflip || self.class.default_hflip
                 @render_props.vflip = vflip || self.class.default_vflip
+
+                @render_props.origin_x = origin_x || self.class.default_origin_x
+                @render_props.origin_y = origin_y || self.class.default_origin_y
             end
 
             # each object's ticker manager should be updated globally
@@ -113,6 +116,15 @@ module RBScene
             @render_props.vflip = val
         end
 
+        def get_origin
+            [@render_props.origin_x, @render_props.origin_y]
+        end
+
+        def set_origin(x: 0, y: 0)
+            @render_props.origin_x = x
+            @render_props.origin_y = y
+        end
+
         # helpers
 
         def inspect
@@ -138,6 +150,12 @@ module RBScene
 
             def frame(rect)
                 @default_frame = rect
+            end
+
+            def origin(x: 0, y: 0)
+                # TODO: This is inconsistent with the other setters. Which do you prefer?
+                @default_origin_x = x
+                @default_origin_y = y
             end
 
             def default_texture
@@ -166,6 +184,14 @@ module RBScene
 
             def default_vflip
                 @default_vflip || false
+            end
+
+            def default_origin_x
+                @default_origin_x || 0
+            end
+
+            def default_origin_y
+                @default_origin_y || 0
             end
         end
     end

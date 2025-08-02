@@ -38,6 +38,7 @@ typedef struct
     float angle;
     Rectangle frame;
     bool hflip, vflip;
+    float origin_x, origin_y;
 } RBRenderProps;
 
 typedef struct
@@ -281,7 +282,7 @@ static VALUE engine_run(VALUE self)
                     .width = props->width,
                     .height = props->height
                 };
-                Vector2 origin = {.x = 0, .y = 0};
+                Vector2 origin = {.x = props->origin_x, .y = props->origin_y};
                 DrawTexturePro(tex->texture, src, dst, origin, props->angle, WHITE);
             }
             else
@@ -447,6 +448,8 @@ static VALUE game_object_make_render_props(VALUE self, VALUE texture)
         .width = tex->texture.width,
         .height = tex->texture.height,
     };
+    robj->origin_x = 0;
+    robj->origin_y = 0;
 
     return robj_val;
 }
@@ -509,6 +512,20 @@ static VALUE render_props_vflip_getter(VALUE self)
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     return props->vflip ? Qtrue : Qfalse;
+}
+
+static VALUE render_props_origin_x_getter(VALUE self)
+{
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    return DBL2NUM(props->origin_x);
+}
+
+static VALUE render_props_origin_y_getter(VALUE self)
+{
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    return DBL2NUM(props->origin_y);
 }
 
 static VALUE render_props_x_setter(VALUE self, VALUE val)
@@ -585,6 +602,24 @@ static VALUE render_props_vflip_setter(VALUE self, VALUE val)
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->vflip = val == Qtrue;
+    return self;
+}
+
+static VALUE render_props_origin_x_setter(VALUE self, VALUE val)
+{
+    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "x origin is not a Numeric");
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    props->origin_x = NUM2DBL(val);
+    return self;
+}
+
+static VALUE render_props_origin_y_setter(VALUE self, VALUE val)
+{
+    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "y origin is not a Numeric");
+    RBRenderProps *props;
+    TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
+    props->origin_y = NUM2DBL(val);
     return self;
 }
 
@@ -713,6 +748,8 @@ void Init_rbscene(void)
     rb_define_method(render_props_class, "frame", render_props_frame_getter, 0);
     rb_define_method(render_props_class, "hflip", render_props_hflip_getter, 0);
     rb_define_method(render_props_class, "vflip", render_props_vflip_getter, 0);
+    rb_define_method(render_props_class, "origin_x", render_props_origin_x_getter, 0);
+    rb_define_method(render_props_class, "origin_y", render_props_origin_y_getter, 0);
     rb_define_method(render_props_class, "x=", render_props_x_setter, 1);
     rb_define_method(render_props_class, "y=", render_props_y_setter, 1);
     rb_define_method(render_props_class, "width=", render_props_width_setter, 1);
@@ -721,6 +758,8 @@ void Init_rbscene(void)
     rb_define_method(render_props_class, "frame=", render_props_frame_setter, 1);
     rb_define_method(render_props_class, "hflip=", render_props_hflip_setter, 1);
     rb_define_method(render_props_class, "vflip=", render_props_vflip_setter, 1);
+    rb_define_method(render_props_class, "origin_x=", render_props_origin_x_setter, 1);
+    rb_define_method(render_props_class, "origin_y=", render_props_origin_y_setter, 1);
 
     rect_class = rb_define_class_under(rbscene_module, "Rect", rb_cObject);
     rb_define_alloc_func(rect_class, rect_alloc);

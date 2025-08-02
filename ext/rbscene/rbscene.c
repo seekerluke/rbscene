@@ -45,67 +45,72 @@ typedef struct
 {
     int window_width;
     int window_height;
-    const char* window_title;
+    const char *window_title;
 } RBEngineConfig;
 
 static void texture_free(void *ptr)
 {
-    RBTexture *tex = (RBTexture*)ptr;
+    RBTexture *tex = (RBTexture *)ptr;
     UnloadTexture(tex->texture);
     ruby_xfree(ptr);
 }
 
 static const rb_data_type_t texture_type =
-{
-    "RBScene::Texture",
-    { 0, texture_free, 0 },
-    0, 0, RUBY_TYPED_FREE_IMMEDIATELY
-};
+    {
+        "RBScene::Texture",
+        {0, texture_free, 0},
+        0,
+        0,
+        RUBY_TYPED_FREE_IMMEDIATELY};
 
 static void music_free(void *ptr)
 {
-    RBMusic *music = (RBMusic*)ptr;
+    RBMusic *music = (RBMusic *)ptr;
     UnloadMusicStream(music->music);
     ruby_xfree(ptr);
 }
 
 static const rb_data_type_t music_type =
-{
-    "RBScene::Music",
-    { 0, music_free, 0 },
-    0, 0, RUBY_TYPED_FREE_IMMEDIATELY
-};
+    {
+        "RBScene::Music",
+        {0, music_free, 0},
+        0,
+        0,
+        RUBY_TYPED_FREE_IMMEDIATELY};
 
 static void sound_free(void *ptr)
 {
-    RBSound *sound = (RBSound*)ptr;
+    RBSound *sound = (RBSound *)ptr;
     UnloadSound(sound->sound);
     ruby_xfree(ptr);
 }
 
 static const rb_data_type_t sound_type =
-{
-    "RBScene::Sound",
-    { 0, sound_free, 0 },
-    0, 0, RUBY_TYPED_FREE_IMMEDIATELY
-};
+    {
+        "RBScene::Sound",
+        {0, sound_free, 0},
+        0,
+        0,
+        RUBY_TYPED_FREE_IMMEDIATELY};
 
 static const rb_data_type_t render_props_type =
-{
-    "RBScene::RenderObject",
-    { 0, RUBY_DEFAULT_FREE, 0 },
-    0, 0, RUBY_TYPED_FREE_IMMEDIATELY
-};
+    {
+        "RBScene::RenderObject",
+        {0, RUBY_DEFAULT_FREE, 0},
+        0,
+        0,
+        RUBY_TYPED_FREE_IMMEDIATELY};
 
 static const rb_data_type_t rect_type =
-{
-    "RBScene::Rect",
-    { 0, RUBY_DEFAULT_FREE, 0 },
-    0, 0, RUBY_TYPED_FREE_IMMEDIATELY
-};
+    {
+        "RBScene::Rect",
+        {0, RUBY_DEFAULT_FREE, 0},
+        0,
+        0,
+        RUBY_TYPED_FREE_IMMEDIATELY};
 
 // global engine variables
-static Camera2D cam = { .zoom = 2 };
+static Camera2D cam = {.zoom = 2};
 static RBMusic *current_music = NULL;
 
 static int symbol_to_keycode(VALUE sym)
@@ -113,16 +118,24 @@ static int symbol_to_keycode(VALUE sym)
     Check_Type(sym, T_SYMBOL);
     const char *name = rb_id2name(SYM2ID(sym));
 
-    if (strcmp(name, "space") == 0) return KEY_SPACE;
-    if (strcmp(name, "enter") == 0) return KEY_ENTER;
-    if (strcmp(name, "escape") == 0) return KEY_ESCAPE;
-    if (strcmp(name, "left") == 0) return KEY_LEFT;
-    if (strcmp(name, "right") == 0) return KEY_RIGHT;
-    if (strcmp(name, "up") == 0) return KEY_UP;
-    if (strcmp(name, "down") == 0) return KEY_DOWN;
+    if (strcmp(name, "space") == 0)
+        return KEY_SPACE;
+    if (strcmp(name, "enter") == 0)
+        return KEY_ENTER;
+    if (strcmp(name, "escape") == 0)
+        return KEY_ESCAPE;
+    if (strcmp(name, "left") == 0)
+        return KEY_LEFT;
+    if (strcmp(name, "right") == 0)
+        return KEY_RIGHT;
+    if (strcmp(name, "up") == 0)
+        return KEY_UP;
+    if (strcmp(name, "down") == 0)
+        return KEY_DOWN;
 
     // a-z keys
-    if (strlen(name) == 1 && name[0] >= 'a' && name[0] <= 'z') {
+    if (strlen(name) == 1 && name[0] >= 'a' && name[0] <= 'z')
+    {
         return KEY_A + (name[0] - 'a');
     }
 
@@ -170,7 +183,8 @@ static int inputs_foreach_callback(VALUE key, VALUE value, VALUE arg)
     return ST_CONTINUE;
 }
 
-static RBEngineConfig get_engine_config() {
+static RBEngineConfig get_engine_config()
+{
     VALUE config_val = rb_iv_get(engine_class, "@config");
 
     VALUE window_title_val = rb_iv_get(config_val, "@window_title");
@@ -224,7 +238,8 @@ static VALUE engine_run(VALUE self)
         // fetch the current scene's objects
         VALUE scene = rb_iv_get(engine_class, "@current_scene");
 
-        if (!rb_obj_is_kind_of(scene, scene_class)) {
+        if (!rb_obj_is_kind_of(scene, scene_class))
+        {
             rb_raise(rb_eTypeError, "Internal error: No active scene. There might be an issue with your config.rb, or your scene switching logic.");
         }
 
@@ -236,7 +251,8 @@ static VALUE engine_run(VALUE self)
         Check_Type(inputs, T_HASH);
         rb_hash_foreach(inputs, inputs_foreach_callback, Qnil);
 
-        if (current_music) UpdateMusicStream(current_music->music);
+        if (current_music)
+            UpdateMusicStream(current_music->music);
 
         // update loop
         // do not optimise by making RARRAY_LEN local, objects can be destroyed during update
@@ -264,7 +280,7 @@ static VALUE engine_run(VALUE self)
         {
             VALUE obj_val = rb_ary_entry(objects, i);
             if (rb_obj_is_kind_of(obj_val, game_object_class))
-            {                
+            {
                 VALUE texture_val = rb_iv_get(obj_val, "@texture");
                 RBTexture *tex;
                 TypedData_Get_Struct(texture_val, RBTexture, &texture_type, tex);
@@ -283,8 +299,7 @@ static VALUE engine_run(VALUE self)
                     .x = props->x,
                     .y = props->y,
                     .width = props->width,
-                    .height = props->height
-                };
+                    .height = props->height};
                 Vector2 origin = {.x = props->origin_x, .y = props->origin_y};
                 DrawTexturePro(tex->texture, src, dst, origin, props->angle, WHITE);
             }
@@ -330,7 +345,7 @@ static VALUE engine_run(VALUE self)
 static VALUE assets_load_texture(VALUE self, VALUE filename)
 {
     Check_Type(filename, T_STRING);
-    
+
     VALUE cache_val = rb_iv_get(self, "@textures");
     Check_Type(cache_val, T_HASH);
 
@@ -545,7 +560,8 @@ static VALUE render_props_origin_y_getter(VALUE self)
 
 static VALUE render_props_x_setter(VALUE self, VALUE val)
 {
-    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "x is not a Numeric");
+    if (!rb_obj_is_kind_of(val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "x is not a Numeric");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->x = NUM2DBL(val);
@@ -554,7 +570,8 @@ static VALUE render_props_x_setter(VALUE self, VALUE val)
 
 static VALUE render_props_y_setter(VALUE self, VALUE val)
 {
-    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "y is not a Numeric");
+    if (!rb_obj_is_kind_of(val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "y is not a Numeric");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->y = NUM2DBL(val);
@@ -563,7 +580,8 @@ static VALUE render_props_y_setter(VALUE self, VALUE val)
 
 static VALUE render_props_width_setter(VALUE self, VALUE val)
 {
-    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "width is not a Numeric");
+    if (!rb_obj_is_kind_of(val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "width is not a Numeric");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->width = NUM2DBL(val);
@@ -572,7 +590,8 @@ static VALUE render_props_width_setter(VALUE self, VALUE val)
 
 static VALUE render_props_height_setter(VALUE self, VALUE val)
 {
-    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "height is not a Numeric");
+    if (!rb_obj_is_kind_of(val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "height is not a Numeric");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->height = NUM2DBL(val);
@@ -581,7 +600,8 @@ static VALUE render_props_height_setter(VALUE self, VALUE val)
 
 static VALUE render_props_angle_setter(VALUE self, VALUE val)
 {
-    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "angle is not a Numeric");
+    if (!rb_obj_is_kind_of(val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "angle is not a Numeric");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->angle = NUM2DBL(val);
@@ -590,7 +610,8 @@ static VALUE render_props_angle_setter(VALUE self, VALUE val)
 
 static VALUE render_props_frame_setter(VALUE self, VALUE val)
 {
-    if (!rb_obj_is_kind_of(val, rect_class)) rb_raise(rb_eTypeError, "frame is not a Rect");
+    if (!rb_obj_is_kind_of(val, rect_class))
+        rb_raise(rb_eTypeError, "frame is not a Rect");
 
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
@@ -604,7 +625,8 @@ static VALUE render_props_frame_setter(VALUE self, VALUE val)
 
 static VALUE render_props_hflip_setter(VALUE self, VALUE val)
 {
-    if (val != Qtrue && val != Qfalse) rb_raise(rb_eTypeError, "hflip is not a Boolean");
+    if (val != Qtrue && val != Qfalse)
+        rb_raise(rb_eTypeError, "hflip is not a Boolean");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->hflip = val == Qtrue;
@@ -613,7 +635,8 @@ static VALUE render_props_hflip_setter(VALUE self, VALUE val)
 
 static VALUE render_props_vflip_setter(VALUE self, VALUE val)
 {
-    if (val != Qtrue && val != Qfalse) rb_raise(rb_eTypeError, "vflip is not a Boolean");
+    if (val != Qtrue && val != Qfalse)
+        rb_raise(rb_eTypeError, "vflip is not a Boolean");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->vflip = val == Qtrue;
@@ -622,7 +645,8 @@ static VALUE render_props_vflip_setter(VALUE self, VALUE val)
 
 static VALUE render_props_origin_x_setter(VALUE self, VALUE val)
 {
-    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "x origin is not a Numeric");
+    if (!rb_obj_is_kind_of(val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "x origin is not a Numeric");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->origin_x = NUM2DBL(val);
@@ -631,7 +655,8 @@ static VALUE render_props_origin_x_setter(VALUE self, VALUE val)
 
 static VALUE render_props_origin_y_setter(VALUE self, VALUE val)
 {
-    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "y origin is not a Numeric");
+    if (!rb_obj_is_kind_of(val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "y origin is not a Numeric");
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
     props->origin_y = NUM2DBL(val);
@@ -651,10 +676,14 @@ static VALUE rect_alloc(VALUE self)
 
 static VALUE rect_initialize(VALUE self, VALUE x, VALUE y, VALUE width, VALUE height)
 {
-    if (!rb_obj_is_kind_of(x, rb_cNumeric)) rb_raise(rb_eTypeError, "x is not a Numeric");
-    if (!rb_obj_is_kind_of(y, rb_cNumeric)) rb_raise(rb_eTypeError, "y is not a Numeric");
-    if (!rb_obj_is_kind_of(width, rb_cNumeric)) rb_raise(rb_eTypeError, "w is not a Numeric");
-    if (!rb_obj_is_kind_of(height, rb_cNumeric)) rb_raise(rb_eTypeError, "h is not a Numeric");
+    if (!rb_obj_is_kind_of(x, rb_cNumeric))
+        rb_raise(rb_eTypeError, "x is not a Numeric");
+    if (!rb_obj_is_kind_of(y, rb_cNumeric))
+        rb_raise(rb_eTypeError, "y is not a Numeric");
+    if (!rb_obj_is_kind_of(width, rb_cNumeric))
+        rb_raise(rb_eTypeError, "w is not a Numeric");
+    if (!rb_obj_is_kind_of(height, rb_cNumeric))
+        rb_raise(rb_eTypeError, "h is not a Numeric");
 
     Rectangle *rect;
     TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
@@ -675,7 +704,8 @@ static VALUE rect_x_getter(VALUE self)
 
 static VALUE rect_x_setter(VALUE self, VALUE val)
 {
-    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "x is not a Numeric");
+    if (!rb_obj_is_kind_of(val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "x is not a Numeric");
     Rectangle *rect;
     TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
     rect->x = NUM2DBL(val);
@@ -691,7 +721,8 @@ static VALUE rect_y_getter(VALUE self)
 
 static VALUE rect_y_setter(VALUE self, VALUE val)
 {
-    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "y is not a Numeric");
+    if (!rb_obj_is_kind_of(val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "y is not a Numeric");
     Rectangle *rect;
     TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
     rect->y = NUM2DBL(val);
@@ -707,7 +738,8 @@ static VALUE rect_w_getter(VALUE self)
 
 static VALUE rect_w_setter(VALUE self, VALUE val)
 {
-    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "w is not a Numeric");
+    if (!rb_obj_is_kind_of(val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "w is not a Numeric");
     Rectangle *rect;
     TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
     rect->width = NUM2DBL(val);
@@ -723,7 +755,8 @@ static VALUE rect_h_getter(VALUE self)
 
 static VALUE rect_h_setter(VALUE self, VALUE val)
 {
-    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "h is not a Numeric");
+    if (!rb_obj_is_kind_of(val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "h is not a Numeric");
     Rectangle *rect;
     TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
     rect->height = NUM2DBL(val);

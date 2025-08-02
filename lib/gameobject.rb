@@ -97,10 +97,6 @@ module RBScene
       @render_props.frame
     end
 
-    def set_frame(rect)
-      @render_props.frame = rect
-    end
-
     def get_hflip
       @render_props.hflip
     end

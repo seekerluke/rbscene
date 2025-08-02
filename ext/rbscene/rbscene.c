@@ -564,17 +564,21 @@ static VALUE render_props_vflip_setter(VALUE self, VALUE val)
 
 static VALUE rect_alloc(VALUE self)
 {
-    // TODO: does this really need to be defined in C?
     Rectangle *rect;
-    return TypedData_Make_Struct(self, Rectangle, &rect_type, rect);
+    VALUE rect_val = TypedData_Make_Struct(self, Rectangle, &rect_type, rect);
+    rect->x = 0;
+    rect->y = 0;
+    rect->width = 0;
+    rect->height = 0;
+    return rect_val;
 }
 
 static VALUE rect_initialize(VALUE self, VALUE x, VALUE y, VALUE width, VALUE height)
 {
-    assert(rb_obj_is_kind_of(x, rb_cNumeric));
-    assert(rb_obj_is_kind_of(y, rb_cNumeric));
-    assert(rb_obj_is_kind_of(width, rb_cNumeric));
-    assert(rb_obj_is_kind_of(height, rb_cNumeric));
+    if (!rb_obj_is_kind_of(x, rb_cNumeric)) rb_raise(rb_eTypeError, "x is not a Numeric");
+    if (!rb_obj_is_kind_of(y, rb_cNumeric)) rb_raise(rb_eTypeError, "y is not a Numeric");
+    if (!rb_obj_is_kind_of(width, rb_cNumeric)) rb_raise(rb_eTypeError, "w is not a Numeric");
+    if (!rb_obj_is_kind_of(height, rb_cNumeric)) rb_raise(rb_eTypeError, "h is not a Numeric");
 
     Rectangle *rect;
     TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
@@ -583,12 +587,71 @@ static VALUE rect_initialize(VALUE self, VALUE x, VALUE y, VALUE width, VALUE he
     rect->width = NUM2DBL(width);
     rect->height = NUM2DBL(height);
 
-    rb_iv_set(self, "@x", x);
-    rb_iv_set(self, "@y", y);
-    rb_iv_set(self, "@w", width);
-    rb_iv_set(self, "@h", height);
-
     return self;
+}
+
+static VALUE rect_x_getter(VALUE self)
+{
+    Rectangle *rect;
+    TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
+    return DBL2NUM(rect->x);
+}
+
+static VALUE rect_x_setter(VALUE self, VALUE val)
+{
+    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    Rectangle *rect;
+    TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
+    rect->x = NUM2DBL(val);
+    return Qnil;
+}
+
+static VALUE rect_y_getter(VALUE self)
+{
+    Rectangle *rect;
+    TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
+    return DBL2NUM(rect->y);
+}
+
+static VALUE rect_y_setter(VALUE self, VALUE val)
+{
+    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    Rectangle *rect;
+    TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
+    rect->y = NUM2DBL(val);
+    return Qnil;
+}
+
+static VALUE rect_w_getter(VALUE self)
+{
+    Rectangle *rect;
+    TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
+    return DBL2NUM(rect->width);
+}
+
+static VALUE rect_w_setter(VALUE self, VALUE val)
+{
+    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    Rectangle *rect;
+    TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
+    rect->width = NUM2DBL(val);
+    return Qnil;
+}
+
+static VALUE rect_h_getter(VALUE self)
+{
+    Rectangle *rect;
+    TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
+    return DBL2NUM(rect->height);
+}
+
+static VALUE rect_h_setter(VALUE self, VALUE val)
+{
+    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    Rectangle *rect;
+    TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
+    rect->height = NUM2DBL(val);
+    return Qnil;
 }
 
 void Init_rbscene(void)
@@ -636,6 +699,14 @@ void Init_rbscene(void)
     rect_class = rb_define_class_under(rbscene_module, "Rect", rb_cObject);
     rb_define_alloc_func(rect_class, rect_alloc);
     rb_define_method(rect_class, "initialize", rect_initialize, 4);
+    rb_define_method(rect_class, "x", rect_x_getter, 0);
+    rb_define_method(rect_class, "y", rect_y_getter, 0);
+    rb_define_method(rect_class, "w", rect_w_getter, 0);
+    rb_define_method(rect_class, "h", rect_h_getter, 0);
+    rb_define_method(rect_class, "x=", rect_x_setter, 1);
+    rb_define_method(rect_class, "y=", rect_y_setter, 1);
+    rb_define_method(rect_class, "w=", rect_w_setter, 1);
+    rb_define_method(rect_class, "h=", rect_h_setter, 1);
 
     // reference existing Ruby classes
     game_object_class = rb_const_get(rbscene_module, rb_intern("GameObject"));

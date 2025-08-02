@@ -1,43 +1,41 @@
 module RBScene
     class Rect
-        attr_accessor :x, :y, :w, :h
-
         # Rects are backed by raylib Rectangles
         # initialize is written in C and takes (x, y, width, height)
-        # instance variables are set, attr_accessors work
+        # getters and setters for x, y, w, h are all written in C
 
         # edges
 
         def top
-            @y
+            self.y
         end
 
         def top=(value)
-            @y = value
+            self.y = value
         end
 
         def left
-            @x
+            self.x
         end
 
         def left=(value)
-            @x = value
+            self.x = value
         end
 
         def bottom
-            @y + @h
+            self.y + self.h
         end
 
         def bottom=(value)
-            @y = value - @h
+            self.y = value - self.h
         end
 
         def right
-            @x + @w
+            self.x + self.w
         end
 
         def right=(value)
-            @x = value - @w
+            self.x = value - self.w
         end
 
         # corners
@@ -119,46 +117,45 @@ module RBScene
         end
 
         def centerx
-            @x + @w / 2.0
+            self.x + self.w / 2.0
         end
 
         def centerx=(value)
-            @x = value - @w / 2.0
+            self.x = value - self.w / 2.0
         end
 
         def centery
-            @y + @h / 2.0
+            self.y + self.h / 2.0
         end
 
         def centery=(value)
-            @y = value - @h / 2.0
+            self.y = value - self.h / 2.0
         end
 
         # size
 
         def size
-            Vector2.new(@w, @h)
+            Vector2.new(self.w, self.h)
         end
 
         def size=(vec)
-            @w = vec.x
-            @h = vec.y
+            self.w, self.h = vec
         end
 
         def width
-            @w
+            self.w
         end
 
         def width=(val)
-            @w = val
+            self.w = val
         end
 
         def height
-            @h
+            self.h
         end
 
         def height=(val)
-            @h = val
+            self.h = val
         end
 
         # collision
@@ -166,20 +163,20 @@ module RBScene
         def collides?(other)
             return false if other.nil?
 
-            @x < other.x + other.w &&
-            @x + @w > other.x &&
-            @y < other.y + other.h &&
-            @y + @h > other.y
+            self.x < other.x + other.w &&
+            self.x + self.w > other.x &&
+            self.y < other.y + other.h &&
+            self.y + self.h > other.y
         end
 
         # helpers
 
         def to_s
-            "Rect(x: #{@x || "nil"}, y: #{@y || "nil"}, w: #{@w || "nil"}, h: #{@h || "nil"})"
+            "Rect(x: #{self.x}, y: #{self.y}, w: #{self.w}, h: #{self.h})"
         end
 
         def to_a
-            [@x, @y, @w, @h]
+            [self.x, self.y, self.w, self.h]
         end
     end
 end

@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+
+require "cli"
+RBScene::CLI.start(ARGV)

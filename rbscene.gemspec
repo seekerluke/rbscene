@@ -9,7 +9,10 @@ Gem::Specification.new do |spec|
   spec.license       = "MIT"
 
   spec.files         = Dir["lib/**/*"] +
-                       Dir["ext/**/*.{c,h,rb}"]
+                       Dir["ext/**/*.{c,h,rb}"] +
+                       Dir["bin/*"]
+                       
+  spec.executables << "rbscene"
 
   spec.extensions    = ["ext/rbscene/extconf.rb"]
 

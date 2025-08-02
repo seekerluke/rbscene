@@ -223,7 +223,10 @@ static VALUE engine_run(VALUE self)
     {
         // fetch the current scene's objects
         VALUE scene = rb_iv_get(engine_class, "@current_scene");
-        assert(rb_obj_is_kind_of(scene, scene_class));
+
+        if (!rb_obj_is_kind_of(scene, scene_class)) {
+            rb_raise(rb_eTypeError, "Internal error: No active scene. There might be an issue with your config.rb, or your scene switching logic.");
+        }
 
         VALUE objects = rb_iv_get(scene, "@objects");
         Check_Type(objects, T_ARRAY);

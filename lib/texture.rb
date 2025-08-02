@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module RBScene
   class Texture
     # more methods defined in C

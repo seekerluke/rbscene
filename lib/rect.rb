@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module RBScene
   class Rect
     # Rects are backed by raylib Rectangles

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # This script is the entry point to your application.
 
 require 'rbscene'

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative 'engine'
 require_relative 'vector2'
 require_relative 'rect'

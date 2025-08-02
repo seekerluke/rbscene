@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module RBScene
   class Vector2
     attr_accessor :x, :y

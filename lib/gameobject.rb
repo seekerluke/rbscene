@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module RBScene
   class GameObject
     include RBScene
@@ -40,12 +42,10 @@ module RBScene
     end
 
     # method stub to be overridden
-    def setup
-    end
+    def setup; end
 
     # method stub to be overridden
-    def update
-    end
+    def update; end
 
     def destroy
       scene.destroy(self)

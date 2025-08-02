@@ -599,7 +599,7 @@ static VALUE rect_x_getter(VALUE self)
 
 static VALUE rect_x_setter(VALUE self, VALUE val)
 {
-    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "x is not a Numeric");
     Rectangle *rect;
     TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
     rect->x = NUM2DBL(val);
@@ -615,7 +615,7 @@ static VALUE rect_y_getter(VALUE self)
 
 static VALUE rect_y_setter(VALUE self, VALUE val)
 {
-    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "y is not a Numeric");
     Rectangle *rect;
     TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
     rect->y = NUM2DBL(val);
@@ -631,7 +631,7 @@ static VALUE rect_w_getter(VALUE self)
 
 static VALUE rect_w_setter(VALUE self, VALUE val)
 {
-    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "w is not a Numeric");
     Rectangle *rect;
     TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
     rect->width = NUM2DBL(val);
@@ -647,7 +647,7 @@ static VALUE rect_h_getter(VALUE self)
 
 static VALUE rect_h_setter(VALUE self, VALUE val)
 {
-    assert(rb_obj_is_kind_of(val, rb_cNumeric));
+    if (!rb_obj_is_kind_of(val, rb_cNumeric)) rb_raise(rb_eTypeError, "h is not a Numeric");
     Rectangle *rect;
     TypedData_Get_Struct(self, Rectangle, &rect_type, rect);
     rect->height = NUM2DBL(val);

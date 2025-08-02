@@ -9,6 +9,7 @@ module RBScene
             gobj = type.new(x: x, y: y)
             gobj.scene = self
             @objects.push(gobj)
+            gobj
         end
 
         def get(type)

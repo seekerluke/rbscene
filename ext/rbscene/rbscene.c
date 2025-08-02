@@ -464,7 +464,11 @@ static VALUE render_props_frame_getter(VALUE self)
 {
     RBRenderProps *props;
     TypedData_Get_Struct(self, RBRenderProps, &render_props_type, props);
-    return TypedData_Wrap_Struct(rect_class, &rect_type, &props->frame);
+
+    Rectangle *rect;
+    VALUE rect_val = TypedData_Make_Struct(rect_class, Rectangle, &rect_type, rect);
+    *rect = props->frame;
+    return rect_val;
 }
 
 static VALUE render_props_hflip_getter(VALUE self)
@@ -560,6 +564,7 @@ static VALUE render_props_vflip_setter(VALUE self, VALUE val)
 
 static VALUE rect_alloc(VALUE self)
 {
+    // TODO: does this really need to be defined in C?
     Rectangle *rect;
     return TypedData_Make_Struct(self, Rectangle, &rect_type, rect);
 }

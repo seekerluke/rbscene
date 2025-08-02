@@ -113,6 +113,12 @@ module RBScene
             @render_props.vflip = val
         end
 
+        # helpers
+
+        def inspect
+            "GameObject(x: #{@render_props.x}, y: #{@render_props.y}, width: #{@render_props.width}, height: #{@render_props.height}, angle: #{@render_props.angle}, frame: #{@render_props.frame}, hflip: #{@render_props.hflip}, vflip: #{@render_props.vflip})"
+        end
+
         class << self
             def texture(path)
                 @default_texture = Assets.load_texture(path)

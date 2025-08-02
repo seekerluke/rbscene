@@ -175,7 +175,7 @@ module RBScene
         # helpers
 
         def to_s
-            "Rect(x: #{@x}, y: #{@y}, w: #{@w}, h: #{@h})"
+            "Rect(x: #{@x || "nil"}, y: #{@y || "nil"}, w: #{@w || "nil"}, h: #{@h || "nil"})"
         end
 
         def to_a

@@ -12,6 +12,7 @@ static VALUE texture_class = Qnil;
 static VALUE sound_class = Qnil;
 static VALUE music_class = Qnil;
 static VALUE input_class = Qnil;
+static VALUE debug_class = Qnil;
 
 typedef struct
 {
@@ -233,9 +234,6 @@ static VALUE engine_run(VALUE self)
 
         if (current_music) UpdateMusicStream(current_music->music);
 
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-
         // update loop
         // do not optimise by making RARRAY_LEN local, objects can be destroyed during update
         for (int i = 0; i < RARRAY_LEN(objects); i++)
@@ -253,6 +251,8 @@ static VALUE engine_run(VALUE self)
             }
         }
 
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
         BeginMode2D(cam);
 
         // draw loop
@@ -289,6 +289,27 @@ static VALUE engine_run(VALUE self)
                 VALUE obj_class = rb_obj_class(obj_val);
                 VALUE class_name = rb_class_name(obj_class);
                 rb_raise(rb_eTypeError, "Attempting to draw a %s, which is not a GameObject", StringValueCStr(class_name));
+            }
+        }
+
+        // debug drawing
+        VALUE debug_rects_val = rb_iv_get(debug_class, "@rects");
+        Check_Type(debug_rects_val, T_ARRAY);
+
+        for (int i = 0; i < RARRAY_LEN(debug_rects_val); i++)
+        {
+            VALUE obj_val = rb_ary_entry(debug_rects_val, i);
+            if (rb_obj_is_kind_of(obj_val, rect_class))
+            {
+                Rectangle *rect;
+                TypedData_Get_Struct(obj_val, Rectangle, &rect_type, rect);
+                DrawRectangleLinesEx(*rect, 1, RED);
+            }
+            else
+            {
+                VALUE obj_class = rb_obj_class(obj_val);
+                VALUE class_name = rb_class_name(obj_class);
+                rb_raise(rb_eTypeError, "Attempting to debug draw a %s, which is not a Rect", StringValueCStr(class_name));
             }
         }
 
@@ -720,4 +741,5 @@ void Init_rbscene(void)
 
     scene_class = rb_const_get(rbscene_module, rb_intern("Scene"));
     input_class = rb_const_get(rbscene_module, rb_intern("Input"));
+    debug_class = rb_const_get(rbscene_module, rb_intern("Debug"));
 }

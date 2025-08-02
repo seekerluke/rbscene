@@ -388,8 +388,7 @@ static VALUE assets_load_music(VALUE self, VALUE filename)
         RBMusic *music;
         music_val = TypedData_Make_Struct(music_class, RBMusic, &music_type, music);
         music->music = LoadMusicStream(StringValueCStr(filename));
-        current_music = music;
-        // TODO: should raise error if sound loading failed
+        // TODO: should raise error if music loading failed
         rb_hash_aset(cache_val, filename, music_val);
     }
 
@@ -413,7 +412,20 @@ static VALUE texture_height(VALUE self)
 
 static VALUE music_play(VALUE self)
 {
-    if (current_music) PlayMusicStream(current_music->music);
+    RBMusic *music;
+    TypedData_Get_Struct(self, RBMusic, &music_type, music);
+    PlayMusicStream(music->music);
+    current_music = music;
+    return Qnil;
+}
+
+static VALUE music_stop(VALUE self)
+{
+    if (current_music)
+    {
+        StopMusicStream(current_music->music);
+        current_music = NULL;
+    }
     return Qnil;
 }
 
@@ -734,6 +746,7 @@ void Init_rbscene(void)
     rb_define_method(texture_class, "height", texture_height, 0);
 
     music_class = rb_define_class_under(rbscene_module, "Music", rb_cObject);
+    rb_define_singleton_method(music_class, "stop", music_stop, 0);
     rb_define_method(music_class, "play", music_play, 0);
 
     sound_class = rb_define_class_under(rbscene_module, "Sound", rb_cObject);

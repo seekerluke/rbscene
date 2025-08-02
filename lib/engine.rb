@@ -23,7 +23,7 @@ module RBScene
             end
 
             def switch_scene(next_scene)
-                @current_scene = next_scene
+                @current_scene = next_scene.new
             end
         end
     end

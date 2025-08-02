@@ -15,6 +15,12 @@ module RBScene
         class << self
             def configure
                 yield @config if block_given?
+
+                # <= is fun syntax that checks if start_scene is a Class object that subclasses Scene
+                unless @config.start_scene.is_a?(Class) && @config.start_scene <= Scene
+                    raise "Start scene must be a class that inherits from Scene"
+                end
+
                 @current_scene = @config.start_scene.new
             end
 

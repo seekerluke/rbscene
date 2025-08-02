@@ -25,6 +25,14 @@ module RBScene
             def switch_scene(next_scene)
                 @current_scene = next_scene.new
             end
+
+            def window_size
+                @config.window_size
+            end
+
+            def window_rect
+                Rect.new(0, 0, *@config.window_size)
+            end
         end
     end
 end

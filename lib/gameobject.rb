@@ -4,12 +4,13 @@ module RBScene
   class GameObject
     include RBScene
 
-    attr_accessor :scene
+    attr_accessor :scene, :props
 
     def initialize(x: nil, y: nil, width: nil, height: nil, angle: nil, frame: nil, hflip: nil, vflip: nil,
-                   origin_x: nil, origin_y: nil)
+                   origin_x: nil, origin_y: nil, **kwargs)
       # array of events per key
       @events = Hash.new { |h, k| h[k] = [] }
+      @props = kwargs
 
       @texture = self.class.default_texture
       if @texture

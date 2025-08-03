@@ -17,8 +17,8 @@ module RBScene
       setup
     end
 
-    def create(type, x: 0, y: 0)
-      gobj = type.new(x: x, y: y)
+    def create(type, x: 0, y: 0, **kwargs)
+      gobj = type.new(x: x, y: y, **kwargs)
       gobj.scene = self
       @objects.push(gobj)
       gobj

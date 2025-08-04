@@ -826,7 +826,6 @@ static VALUE camera_scroll(VALUE self, VALUE x_val, VALUE y_val)
     if (!rb_obj_is_kind_of(y_val, rb_cNumeric))
         rb_raise(rb_eTypeError, "y is not a Numeric");
 
-    rb_p(self);
     Camera2D *camera;
     TypedData_Get_Struct(self, Camera2D, &camera_type, camera);
     camera->offset.x += NUM2DBL(x_val);

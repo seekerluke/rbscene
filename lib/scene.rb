@@ -2,8 +2,11 @@
 
 module RBScene
   class Scene
+    attr_accessor :camera
+
     def initialize
       @objects = []
+      @camera = Camera.new
 
       # stop if empty string is specified
       # continue playing previous music if nil
@@ -41,8 +44,10 @@ module RBScene
     end
 
     # method stub to be overridden
-    def setup
-    end
+    def setup; end
+
+    # method stub to be overridden
+    def update; end
 
     class << self
       attr_reader :music_path

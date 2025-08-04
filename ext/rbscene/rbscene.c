@@ -7,12 +7,16 @@ static VALUE engine_class = Qnil;
 static VALUE game_object_class = Qnil;
 static VALUE render_props_class = Qnil;
 static VALUE rect_class = Qnil;
+static VALUE camera_class = Qnil;
 static VALUE scene_class = Qnil;
 static VALUE texture_class = Qnil;
 static VALUE sound_class = Qnil;
 static VALUE music_class = Qnil;
 static VALUE input_class = Qnil;
 static VALUE debug_class = Qnil;
+
+static int window_width = 0;
+static int window_height = 0;
 
 typedef struct
 {
@@ -109,8 +113,16 @@ static const rb_data_type_t rect_type =
         0,
         RUBY_TYPED_FREE_IMMEDIATELY};
 
+static const rb_data_type_t camera_type =
+    {
+        "RBScene::Camera",
+        {0, RUBY_DEFAULT_FREE, 0},
+        0,
+        0,
+        RUBY_TYPED_FREE_IMMEDIATELY};
+
 // global engine variables
-static Camera2D cam = {.zoom = 2};
+static Camera2D *cam = NULL;
 static RBMusic *current_music = NULL;
 
 static int symbol_to_keycode(VALUE sym)
@@ -214,6 +226,9 @@ static VALUE engine_init(VALUE self)
 {
     RBEngineConfig config = get_engine_config();
 
+    window_width = config.window_width;
+    window_height = config.window_height;
+
     InitWindow(config.window_width, config.window_height, config.window_title);
     InitAudioDevice();
     SetTargetFPS(60);
@@ -225,6 +240,9 @@ static VALUE engine_update(VALUE self)
 {
     RBEngineConfig config = get_engine_config();
 
+    window_width = config.window_width;
+    window_height = config.window_height;
+
     SetWindowTitle(config.window_title);
     SetWindowSize(config.window_width, config.window_height);
 
@@ -235,14 +253,13 @@ static VALUE engine_run(VALUE self)
 {
     while (!WindowShouldClose())
     {
-        // fetch the current scene's objects
         VALUE scene = rb_iv_get(engine_class, "@current_scene");
-
         if (!rb_obj_is_kind_of(scene, scene_class))
         {
             rb_raise(rb_eTypeError, "Internal error: No active scene. There might be an issue with your config.rb, or your scene switching logic.");
         }
 
+        // fetch the current scene's objects
         VALUE objects = rb_iv_get(scene, "@objects");
         Check_Type(objects, T_ARRAY);
 
@@ -271,9 +288,15 @@ static VALUE engine_run(VALUE self)
             }
         }
 
+        rb_funcall(scene, rb_intern("update"), 0);
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        BeginMode2D(cam);
+
+        // fetch camera from scene, will raise error if no camera object exists
+        VALUE camera_val = rb_iv_get(scene, "@camera");
+        TypedData_Get_Struct(camera_val, Camera2D, &camera_type, cam);
+        BeginMode2D(*cam);
 
         // draw loop
         for (int i = 0; i < RARRAY_LEN(objects); i++)
@@ -301,7 +324,11 @@ static VALUE engine_run(VALUE self)
                     .width = props->width,
                     .height = props->height};
                 Vector2 origin = {.x = props->origin_x, .y = props->origin_y};
-                DrawTexturePro(tex->texture, src, dst, origin, props->angle, WHITE);
+
+                // check if x +(?) origin_x is less than zero or greater than window size, do for y as well
+                // this would have to handle camera zoom and scrolling automatically
+                if ((dst.x >= 0 && dst.x < window_width) && (dst.y >= 0 && dst.y < window_height))
+                    DrawTexturePro(tex->texture, src, dst, origin, props->angle, WHITE);
             }
             else
             {
@@ -763,6 +790,80 @@ static VALUE rect_h_setter(VALUE self, VALUE val)
     return Qnil;
 }
 
+static VALUE camera_alloc(VALUE self)
+{
+    Camera2D *camera;
+    VALUE camera_val = TypedData_Make_Struct(self, Camera2D, &camera_type, camera);
+    camera->offset = (Vector2){.x = 0, .y = 0};
+    camera->rotation = 0;
+    camera->target = (Vector2){.x = 0, .y = 0};
+    camera->zoom = 1;
+    return camera_val;
+}
+
+static VALUE camera_zoom_getter(VALUE self)
+{
+    Camera2D *camera;
+    TypedData_Get_Struct(self, Camera2D, &camera_type, camera);
+    return DBL2NUM(camera->zoom);
+}
+
+static VALUE camera_zoom_setter(VALUE self, VALUE val)
+{
+    if (!rb_obj_is_kind_of(val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "zoom is not a Numeric");
+    Camera2D *camera;
+    TypedData_Get_Struct(self, Camera2D, &camera_type, camera);
+    camera->zoom = NUM2DBL(val);
+    return self;
+}
+
+static VALUE camera_scroll(VALUE self, VALUE x_val, VALUE y_val)
+{
+    if (!rb_obj_is_kind_of(x_val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "x is not a Numeric");
+
+    if (!rb_obj_is_kind_of(y_val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "y is not a Numeric");
+
+    rb_p(self);
+    Camera2D *camera;
+    TypedData_Get_Struct(self, Camera2D, &camera_type, camera);
+    camera->offset.x += NUM2DBL(x_val);
+    camera->offset.y += NUM2DBL(y_val);
+    return Qnil;
+}
+
+static VALUE camera_move_to(VALUE self, VALUE x_val, VALUE y_val)
+{
+    if (!rb_obj_is_kind_of(x_val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "x is not a Numeric");
+
+    if (!rb_obj_is_kind_of(y_val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "y is not a Numeric");
+
+    Camera2D *camera;
+    TypedData_Get_Struct(self, Camera2D, &camera_type, camera);
+    camera->offset.x = NUM2DBL(x_val);
+    camera->offset.y = NUM2DBL(y_val);
+    return Qnil;
+}
+
+static VALUE camera_target(VALUE self, VALUE x_val, VALUE y_val)
+{
+    if (!rb_obj_is_kind_of(x_val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "x is not a Numeric");
+
+    if (!rb_obj_is_kind_of(y_val, rb_cNumeric))
+        rb_raise(rb_eTypeError, "y is not a Numeric");
+
+    Camera2D *camera;
+    TypedData_Get_Struct(self, Camera2D, &camera_type, camera);
+    camera->target.x = NUM2DBL(x_val);
+    camera->target.y = NUM2DBL(y_val);
+    return Qnil;
+}
+
 void Init_rbscene(void)
 {
     // init bindings
@@ -821,6 +922,15 @@ void Init_rbscene(void)
     rb_define_method(rect_class, "y=", rect_y_setter, 1);
     rb_define_method(rect_class, "w=", rect_w_setter, 1);
     rb_define_method(rect_class, "h=", rect_h_setter, 1);
+
+    camera_class = rb_define_class_under(rbscene_module, "Camera", rb_cObject);
+    rb_define_alloc_func(camera_class, camera_alloc);
+    rb_define_method(camera_class, "zoom", camera_zoom_getter, 0);
+    rb_define_method(camera_class, "zoom=", camera_zoom_setter, 1);
+    // TODO: consider adding keyword args to scroll and move_to instead of positional ones (x:, y:)
+    rb_define_method(camera_class, "scroll", camera_scroll, 2);
+    rb_define_method(camera_class, "move_to", camera_move_to, 2);
+    rb_define_method(camera_class, "target", camera_target, 2);
 
     // reference existing Ruby classes
     game_object_class = rb_const_get(rbscene_module, rb_intern("GameObject"));

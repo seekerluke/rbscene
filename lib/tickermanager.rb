@@ -26,8 +26,13 @@ module RBScene
       @tickers[name][:running] = true
     end
 
-    def stop(name)
+    def stop(name, reset: false)
       @tickers[name][:running] = false
+
+      return unless reset
+
+      @tickers[name][:counter] = 0
+      @tickers[name][:value] = 0
     end
 
     def running?(name)

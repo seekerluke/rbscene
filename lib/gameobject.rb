@@ -52,6 +52,25 @@ module RBScene
       scene.destroy(self)
     end
 
+    def move_toward(targetx, targety, speed)
+      x, y = get_position
+      dx = targetx - x
+      dy = targety - y
+      distance = Math.sqrt(dx**2 + dy**2)
+
+      stopped = false
+      if distance <= speed || distance.zero?
+        set_position(x: targetx, y: targety)
+        stopped = true
+      else
+        angle = Math.atan2(dy, dx)
+        x += Math.cos(angle) * speed
+        y += Math.sin(angle) * speed
+        set_position(x: x, y: y)
+      end
+      stopped
+    end
+
     def ticker
       @ticker_manager
     end

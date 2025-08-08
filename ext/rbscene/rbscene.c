@@ -249,6 +249,66 @@ static VALUE engine_update(VALUE self)
     return Qnil;
 }
 
+static void update_objects(VALUE objects)
+{
+    for (int i = 0; i < RARRAY_LEN(objects); i++)
+    {
+        VALUE obj_val = rb_ary_entry(objects, i);
+        if (rb_obj_is_kind_of(obj_val, game_object_class))
+        {
+            rb_funcall(obj_val, rb_intern("update"), 0);
+        }
+        else
+        {
+            VALUE obj_class = rb_obj_class(obj_val);
+            VALUE class_name = rb_class_name(obj_class);
+            rb_raise(rb_eTypeError, "Attempting to update a %s, which is not a GameObject", StringValueCStr(class_name));
+        }
+    }
+}
+
+static void draw_objects(VALUE objects)
+{
+    for (int i = 0; i < RARRAY_LEN(objects); i++)
+    {
+        VALUE obj_val = rb_ary_entry(objects, i);
+        if (rb_obj_is_kind_of(obj_val, game_object_class))
+        {
+            VALUE texture_val = rb_iv_get(obj_val, "@texture");
+            RBTexture *tex;
+            TypedData_Get_Struct(texture_val, RBTexture, &texture_type, tex);
+
+            VALUE render_props_val = rb_iv_get(obj_val, "@render_props");
+            assert(rb_obj_is_kind_of(render_props_val, render_props_class));
+
+            RBRenderProps *props;
+            TypedData_Get_Struct(render_props_val, RBRenderProps, &render_props_type, props);
+
+            Rectangle src = props->frame;
+            src.width = props->hflip ? -src.width : src.width;
+            src.height = props->vflip ? -src.height : src.height;
+
+            Rectangle dst = {
+                .x = props->x,
+                .y = props->y,
+                .width = props->width,
+                .height = props->height};
+            Vector2 origin = {.x = props->origin_x, .y = props->origin_y};
+
+            // check if x +(?) origin_x is less than zero or greater than window size, do for y as well
+            // this would have to handle camera zoom and scrolling automatically
+            if ((dst.x >= 0 && dst.x < window_width) && (dst.y >= 0 && dst.y < window_height))
+                DrawTexturePro(tex->texture, src, dst, origin, props->angle, WHITE);
+        }
+        else
+        {
+            VALUE obj_class = rb_obj_class(obj_val);
+            VALUE class_name = rb_class_name(obj_class);
+            rb_raise(rb_eTypeError, "Attempting to draw a %s, which is not a GameObject", StringValueCStr(class_name));
+        }
+    }
+}
+
 static VALUE engine_run(VALUE self)
 {
     while (!WindowShouldClose())
@@ -263,6 +323,9 @@ static VALUE engine_run(VALUE self)
         VALUE objects = rb_iv_get(scene, "@objects");
         Check_Type(objects, T_ARRAY);
 
+        VALUE ui_objects = rb_iv_get(scene, "@ui_objects");
+        Check_Type(ui_objects, T_ARRAY);
+
         // handle inputs
         VALUE inputs = rb_iv_get(input_class, "@inputs");
         Check_Type(inputs, T_HASH);
@@ -272,22 +335,8 @@ static VALUE engine_run(VALUE self)
             UpdateMusicStream(current_music->music);
 
         // update loop
-        // do not optimise by making RARRAY_LEN local, objects can be destroyed during update
-        for (int i = 0; i < RARRAY_LEN(objects); i++)
-        {
-            VALUE obj_val = rb_ary_entry(objects, i);
-            if (rb_obj_is_kind_of(obj_val, game_object_class))
-            {
-                rb_funcall(obj_val, rb_intern("update"), 0);
-            }
-            else
-            {
-                VALUE obj_class = rb_obj_class(obj_val);
-                VALUE class_name = rb_class_name(obj_class);
-                rb_raise(rb_eTypeError, "Attempting to update a %s, which is not a GameObject", StringValueCStr(class_name));
-            }
-        }
-
+        update_objects(objects);
+        update_objects(ui_objects);
         rb_funcall(scene, rb_intern("update"), 0);
 
         BeginDrawing();
@@ -299,44 +348,7 @@ static VALUE engine_run(VALUE self)
         BeginMode2D(*cam);
 
         // draw loop
-        for (int i = 0; i < RARRAY_LEN(objects); i++)
-        {
-            VALUE obj_val = rb_ary_entry(objects, i);
-            if (rb_obj_is_kind_of(obj_val, game_object_class))
-            {
-                VALUE texture_val = rb_iv_get(obj_val, "@texture");
-                RBTexture *tex;
-                TypedData_Get_Struct(texture_val, RBTexture, &texture_type, tex);
-
-                VALUE render_props_val = rb_iv_get(obj_val, "@render_props");
-                assert(rb_obj_is_kind_of(render_props_val, render_props_class));
-
-                RBRenderProps *props;
-                TypedData_Get_Struct(render_props_val, RBRenderProps, &render_props_type, props);
-
-                Rectangle src = props->frame;
-                src.width = props->hflip ? -src.width : src.width;
-                src.height = props->vflip ? -src.height : src.height;
-
-                Rectangle dst = {
-                    .x = props->x,
-                    .y = props->y,
-                    .width = props->width,
-                    .height = props->height};
-                Vector2 origin = {.x = props->origin_x, .y = props->origin_y};
-
-                // check if x +(?) origin_x is less than zero or greater than window size, do for y as well
-                // this would have to handle camera zoom and scrolling automatically
-                if ((dst.x >= 0 && dst.x < window_width) && (dst.y >= 0 && dst.y < window_height))
-                    DrawTexturePro(tex->texture, src, dst, origin, props->angle, WHITE);
-            }
-            else
-            {
-                VALUE obj_class = rb_obj_class(obj_val);
-                VALUE class_name = rb_class_name(obj_class);
-                rb_raise(rb_eTypeError, "Attempting to draw a %s, which is not a GameObject", StringValueCStr(class_name));
-            }
-        }
+        draw_objects(objects);
 
         // debug drawing
         VALUE debug_rects_val = rb_iv_get(debug_class, "@rects");
@@ -360,6 +372,10 @@ static VALUE engine_run(VALUE self)
         }
 
         EndMode2D();
+
+        // UI drawing (no camera transforms)
+        draw_objects(ui_objects);
+
         EndDrawing();
     }
 

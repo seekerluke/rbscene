@@ -2,10 +2,13 @@
 
 module RBScene
   class Scene
+    include RBScene
+
     attr_accessor :camera
 
     def initialize
       @objects = []
+      @ui_objects = []
       @camera = Camera.new
 
       # stop if empty string is specified
@@ -20,13 +23,20 @@ module RBScene
       setup
     end
 
-    def create(type, x: 0, y: 0, **kwargs)
+    def create(type, x: 0, y: 0, ui: false, **kwargs)
       gobj = type.new(x: x, y: y, **kwargs)
       gobj.scene = self
-      @objects.push(gobj)
+
+      if ui
+        @ui_objects.push(gobj)
+      else
+        @objects.push(gobj)
+      end
+
       gobj
     end
 
+    # TODO: these get methods need to take ui objects into account
     def get(type)
       @objects.find { |obj| obj.is_a?(type) }
     end
@@ -37,6 +47,7 @@ module RBScene
 
     def destroy(obj)
       @objects.delete(obj)
+      @ui_objects.delete(obj)
     end
 
     def switch(scene_type)
